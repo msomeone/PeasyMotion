@@ -300,7 +300,7 @@ namespace PeasyMotion
             inputListener.RemoveFilter();
             TryEnableVsVim();
             //TODO: detect ViEmu presence!!!
-            //SendKeys.Send("{ESC}"); // <- workaround: ViEmu finalize 
+            SendKeys.Send("{ESC}"); // <- workaround: ViEmu finalize 
         }
 
     }
