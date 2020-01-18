@@ -22,8 +22,8 @@ nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i
 ```
 'i' is needed to enter into input mode.
 
-Download this extension from the [VS Gallery](https://visualstudiogallery.msdn.microsoft.com/[GuidFromGallery])
-or get the [CI build](http://vsixgallery.com/extension/{ID}/).
+Download this extension from the [VS Gallery](!!!!!!!!!!!)
+or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.
@@ -35,7 +35,7 @@ is available in the same directory under the name LICENCE.txt.
 
 ## Latest Builds
 The build representing the latest source code can be downloaded from the
-[Open Vsix Gallery](http://vsixgallery.com/extension/!!!!!!!!!!!/).
+[Open Vsix Gallery](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Buidling
 For cloning and building this project yourself, make sure
