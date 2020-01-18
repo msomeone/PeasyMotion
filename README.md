@@ -33,7 +33,7 @@ Check out the [contribution guidelines](CONTRIBUTING.md)
 
 ## License
 All code in this project is covered under the MIT license a copy of which 
-is available in the same directory under the name LICENCE.txt.
+is available in the same directory under the name LICENSE.txt.
 
 ## Latest Builds
 The build representing the latest source code can be downloaded from the
