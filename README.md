@@ -15,14 +15,15 @@ VsVim
 just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>
+"VsVim is disabled until PeasyMotion finishes, so no 'i' is needed
 ```
 
 ViEmu
 just bind PeasyMotion command in your _viemurc file:
 ```vimscript
-nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i
+nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i 
+"'i' is needed to enter into input mode.
 ```
-'i' is needed to enter into input mode.
 
 Download this extension from the [VS Gallery](!!!!!!!!!!!)
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
