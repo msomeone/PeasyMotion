@@ -27,7 +27,7 @@ or get the [CI build](http://vsixgallery.com/extension/{ID}/).
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.
-Check out the [contribution guidelines]CONTRIBUTING.md
+Check out the [contribution guidelines](CONTRIBUTING.md)
 
 ## License
 All code in this project is covered under the MIT license a copy of which 
