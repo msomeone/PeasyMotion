@@ -8,7 +8,7 @@ This extension differs from other motion/jump extensions as it assigns jump labe
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by vim-easymotion.
         </Description>
-        <License>LICENCE.txt</License>
+        <License>LICENSE.txt</License>
         <Icon>Resources\icon.png</Icon>
         <Tags>Productivity, Power tools, Navigation, quick jump, Motion, EasyMotion, Jump, AceJump, CocoJumper,</Tags>
     </Metadata>
