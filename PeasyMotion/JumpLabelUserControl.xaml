@@ -1,0 +1,9 @@
+﻿<UserControl x:Class="PeasyMotion.JumpLabelUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" Height="25.939" Width="19.173">
+
+    <Label Content="X" HorizontalAlignment="Left" VerticalAlignment="Top" Background="GreenYellow" Height="26" Width="19"/>
+</UserControl>
