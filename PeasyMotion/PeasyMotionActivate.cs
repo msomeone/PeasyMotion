@@ -299,8 +299,8 @@ namespace PeasyMotion
             inputListener.KeyPressed -= InputListenerOnKeyPressed;
             inputListener.RemoveFilter();
             TryEnableVsVim();
-            //TODO:!!!!!
-            //SendKeys.Send("{ESC}"); // <- ViEmu workaround
+            //TODO: detect ViEmu presence!!!
+            //SendKeys.Send("{ESC}"); // <- workaround: ViEmu finalize 
         }
 
     }
