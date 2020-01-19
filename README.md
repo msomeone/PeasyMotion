@@ -9,6 +9,8 @@ This extension differs from other motion/jump extensions as it assigns jump labe
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
 
+## Key binding (for VsVim or ViEmu see below)
+Assign key combination through Tools->Options->Keyboard ( command name: Tools.InvokePeasyMotion )
 
 ## Compatibility with other plugins
 VsVim 
