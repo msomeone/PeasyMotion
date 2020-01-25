@@ -18,8 +18,8 @@ Two jump label assignment algorithms are available (Tools->Options->PeasyMotion 
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
 * Viewport relative - labels assigned from top to bottom of visible text in viewport.
 
-In caret relative mode you can adjust 'proximity' sensivity via "Caret position sensivity" option.
-When caret sensivity is not equal to 0, caret position is quantized into blocks of (sensivity+1) caret positions and is treated as beign located in the middle of encasing block.
+In caret relative mode you can adjust 'proximity' sensitivity  via "Caret position sensitivity " option.
+When caret sensitivity  is not equal to 0, caret position is quantized into blocks of (sensitivity +1) caret positions and is treated as being located in the middle of encasing block.
 
 ## Compatibility with other plugins
 VsVim 
