@@ -9,6 +9,9 @@ This extension differs from other motion/jump extensions as it assigns jump labe
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
 
+Download this extension from the [VS Gallery](https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion)
+or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
+
 ## Key binding (for VsVim or ViEmu see below)
 Assign key combination through Tools->Options->Keyboard ( command name: Tools.InvokePeasyMotion )
 
@@ -26,9 +29,6 @@ just bind PeasyMotion command in your _viemurc file:
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i 
 "'i' is needed to enter into input mode.
 ```
-
-Download this extension from the [VS Gallery](!!!!!!!!!!!)
-or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.

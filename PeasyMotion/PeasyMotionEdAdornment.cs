@@ -64,6 +64,9 @@ namespace PeasyMotion
                 throw new ArgumentNullException(nameof(view));
             }
 
+            var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.jumpLabelAssignmentAlgorithm;
+            var caretPositionSensivity = Math.Min(Int32.MaxValue>>2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
+
             this.layer = view.GetAdornmentLayer("PeasyMotionEdAdornment");
 
             var watch1 = System.Diagnostics.Stopwatch.StartNew();
@@ -82,11 +85,19 @@ namespace PeasyMotion
             int lastTextPos = this.view.TextViewLines.LastVisibleLine.End;
 
             var cursorSnapshotPt = this.view.Caret.Position.BufferPosition;
-            int cursorIndex = cursorSnapshotPt.Position;
-            if ((cursorIndex < currentTextPos) || (cursorIndex > lastTextPos))
+            int cursorIndex = 0;
+            if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
             {
-                cursorSnapshotPt = this.view.TextSnapshot.GetLineFromPosition(currentTextPos + (lastTextPos - currentTextPos)/2).Start;
                 cursorIndex = cursorSnapshotPt.Position;
+                if ((cursorIndex < currentTextPos) || (cursorIndex > lastTextPos))
+                {
+                    cursorSnapshotPt = this.view.TextSnapshot.GetLineFromPosition(currentTextPos + (lastTextPos - currentTextPos) / 2).Start;
+                    cursorIndex = cursorSnapshotPt.Position;
+                }
+
+                // bin caret to virtual segments accroding to sensivity option, with sensivity=0 does nothing
+                int dc = caretPositionSensivity + 1;
+                cursorIndex = (cursorIndex / dc) * dc + (dc / 2);
             }
 
             // collect words and required properties in visible text
@@ -192,8 +203,11 @@ namespace PeasyMotion
             Trace.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
             var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-            // sort jump words from closest to cursor to farthest
-            jumpWords.Sort((a, b) => -a.distanceToCursor.CompareTo(b.distanceToCursor));
+            if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
+            {
+                // sort jump words from closest to cursor to farthest
+                jumpWords.Sort((a, b) => -a.distanceToCursor.CompareTo(b.distanceToCursor));
+            }
 #if MEASUREEXECTIME
             watch2.Stop();
             Trace.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
@@ -204,6 +218,10 @@ namespace PeasyMotion
 
 #if MEASUREEXECTIME
             watch3.Stop();
+            Trace.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch.ElapsedMilliseconds} ms");
+            adornmentCreateStopwatch = null;
+            Trace.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem.ElapsedMilliseconds} ms");
+            createAdornmentUIElem = null;
             Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
 #endif
         }
@@ -213,6 +231,11 @@ namespace PeasyMotion
             public int jumpWordIndex;
             public Dictionary<char, JumpNode> childrenNodes;
         };
+
+#if MEASUREEXECTIME
+        private Stopwatch adornmentCreateStopwatch = null;
+        private Stopwatch createAdornmentUIElem = null;
+#endif
 
         private Dictionary<char, JumpNode> computeGroups(int wordStartIndex, int wordEndIndex, string keys0, string prefix, List<JumpWord> jumpWords)
         { 
@@ -280,12 +303,39 @@ namespace PeasyMotion
                     };
                     var jw = jumpWords[wordStartIndex + k];
                     string jumpLabel = prefix + keys0[keyIndex];
-                    var adornment = new JumpLabelUserControl(jumpLabel, jw.adornmentBounds, emSize);
+
+#if MEASUREEXECTIME
+                    if (createAdornmentUIElem == null)
+                    {
+                        createAdornmentUIElem = Stopwatch.StartNew();
+                    }
+                    else
+                    {
+                        createAdornmentUIElem.Start();
+                    }
+#endif
+                    var adornment = JumpLabelUserControl.GetFreeUserControl(jumpLabel, jw.adornmentBounds, emSize);
 
                     Canvas.SetLeft(adornment, jw.adornmentBounds.Left);
                     Canvas.SetTop(adornment, jw.adornmentBounds.Top);
+#if MEASUREEXECTIME
+                    createAdornmentUIElem.Stop();
+#endif
 
-                    this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, null);
+#if MEASUREEXECTIME
+                    if (adornmentCreateStopwatch == null)
+                    {
+                        adornmentCreateStopwatch = Stopwatch.StartNew();
+                    }
+                    else
+                    {
+                        adornmentCreateStopwatch.Start();
+                    }
+#endif
+                    this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, JumpLabelAdornmentRemovedCallback);
+#if MEASUREEXECTIME
+                    adornmentCreateStopwatch.Stop();
+#endif
 
                     //Debug.WriteLine(jw.text + " -> |" + jumpLabel + "|");
                     var cj = new Jump() { span = jw.span, label = jumpLabel, labelAdornment = adornment };
@@ -300,6 +350,11 @@ namespace PeasyMotion
             }
 
             return groups;
+        }
+
+        public void JumpLabelAdornmentRemovedCallback(object _, UIElement element)
+        {
+            JumpLabelUserControl.ReleaseUserControl(element as JumpLabelUserControl);
         }
 
         public static string Reverse( string s )
