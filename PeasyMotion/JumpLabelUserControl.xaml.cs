@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -16,10 +17,13 @@ namespace PeasyMotion
             return label.Substring(0, Math.Min(label.Length, 2));
             //return label; // debug: show full jump label
         }
-        public JumpLabelUserControl(string label, Rect bounds, double fontRenderingEmSize)
+        public JumpLabelUserControl()
         {
             InitializeComponent();
+        }
 
+        void init(string label, Rect bounds, double fontRenderingEmSize)
+        {
             this.oneCharWidth = bounds.Width;
 
             var str = GetTrimmedLabel(label); 
@@ -44,6 +48,33 @@ namespace PeasyMotion
                 this.Background = Brushes.LightGray;
                 this.Foreground = Brushes.Red;
             }
+        }
+
+        private static Stack<JumpLabelUserControl> cache = new Stack<JumpLabelUserControl>(1<<12);
+
+        // warmup just a lil bit, dont allocate whole capacity, as it may slow down on startup.
+        public static void WarmupCache()
+        {
+            for (int i = 0; i < 512; i++)
+            {
+                cache.Push(new JumpLabelUserControl());
+            }
+        }
+        public static JumpLabelUserControl GetFreeUserControl(string label, Rect bounds, double fontRenderingEmSize)
+        {
+            JumpLabelUserControl ctrl = null;
+            if (1 > cache.Count)
+            {
+                ctrl = new JumpLabelUserControl();
+            } else {
+                ctrl = cache.Pop();
+            }
+            ctrl.init(label, bounds, fontRenderingEmSize);
+            return ctrl;
+        }
+
+        public static void ReleaseUserControl(JumpLabelUserControl ctrl) {
+            cache.Push(ctrl);
         }
     }
 }

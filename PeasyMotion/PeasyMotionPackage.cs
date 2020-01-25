@@ -29,6 +29,7 @@ namespace PeasyMotion
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(PeasyMotionPackage.PackageGuidString)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideOptionPage(typeof(DialogPageProvider.General), "PeasyMotion options", "General", 101, 106, true)]
     public sealed class PeasyMotionPackage : AsyncPackage
     {
         public const bool MeasureExecTime = false;

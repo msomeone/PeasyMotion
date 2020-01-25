@@ -86,6 +86,8 @@ namespace PeasyMotion
 
         private const string VsVimSetDisabled = "VsVim.SetDisabled";
         private const string VsVimSetEnabled = "VsVim.SetEnabled";
+        private static bool disableVsVimCmdAvailable = false;
+        private static bool enableVsVimCmdAvailable = false;
         private CommandExecutorService cmdExec = null;
 
         /// <summary>
@@ -98,8 +100,12 @@ namespace PeasyMotion
 
         public void Init()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             CreateMenu();
             cmdExec = new CommandExecutorService() {};
+            disableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetDisabled);
+            enableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetEnabled);
+            JumpLabelUserControl.WarmupCache();
         }
 
         private void CreateMenu() {
@@ -146,7 +152,7 @@ namespace PeasyMotion
         public static async Task InitializeAsync(AsyncPackage package)
         {
             // Switch to the main thread - the call to AddCommand in PeasyMotionActivate's constructor requires
-            // the UI thread.
+            // the UI thread + we gona check if VsVim commands are available
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
             OleMenuCommandService commandService_ = await package.GetServiceAsync(typeof(IMenuCommandService)).ConfigureAwait(true) as OleMenuCommandService;
@@ -201,6 +207,9 @@ namespace PeasyMotion
         /// <param name="e">Event args.</param>
         private void Execute(object sender, EventArgs e)
         {
+#if MEASUREEXECTIME
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+#endif
             textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
             if (vsTextView == null) {
                 Debug.Fail("MenuItemCallback: could not retrieve current view");
@@ -212,13 +221,26 @@ namespace PeasyMotion
                 return;
             }
 
-#if MEASUREEXECTIME
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-#endif
+
+            #if MEASUREEXECTIME
+            var watch3 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
             if (adornmentMgr != null) {
                 Deactivate();
             }
+            #if MEASUREEXECTIME
+            watch3.Stop();
+            Trace.WriteLine($"PeasyMotion Deactivate(): {watch3.ElapsedMilliseconds} ms");
+            #endif
+
+            #if MEASUREEXECTIME
+            var watch2 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
             TryDisableVsVim();
+            #if MEASUREEXECTIME
+            watch2.Stop();
+            Trace.WriteLine($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
+            #endif
 
             ITextStructureNavigator textStructNav = this.textStructureNavigatorSelector.GetTextStructureNavigator(wpfTextView.TextBuffer);
 
@@ -226,6 +248,23 @@ namespace PeasyMotion
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
+            /*
+PeasyMotion Adornment find words: 11 ms
+PeasyMotion Adornment sort words: 3 ms
+PeasyMotion Adornments create: 150 ms <----- WTF????????????????
+PeasyMotion Adornments group&create: 157 ms
+PeasyMotion FullExecTime: 300 ms
+
+PeasyMotion TryDisableVsVim: 86 ms <--------- WTF?????
+PeasyMotion GetTextStructureNavigator: 0 ms
+PeasyMotion Adornment find words: 19 ms
+PeasyMotion Adornment sort words: 4 ms
+PeasyMotion Adornments create: 210 ms
+PeasyMotion Adornments group&create: 218 ms
+PeasyMotion CreateInputListener: 1 ms
+PeasyMotion FullExecTime: 368 ms
+
+            */
 
 #if MEASUREEXECTIME
             watch.Stop();
@@ -235,18 +274,16 @@ namespace PeasyMotion
         private void TryDisableVsVim()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (!cmdExec.IsCommandAvailable(VsVimSetDisabled))
+            if (disableVsVimCmdAvailable)
             {
-                return;
+                cmdExec.Execute(VsVimSetDisabled);
             }
-            ThreadHelper.ThrowIfNotOnUIThread();
-            cmdExec.Execute(VsVimSetDisabled);
         }
 
         private void TryEnableVsVim()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            if (cmdExec.IsCommandAvailable(VsVimSetEnabled))
+            if (enableVsVimCmdAvailable)
             {
                 cmdExec.Execute(VsVimSetEnabled);
             }
