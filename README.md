@@ -12,8 +12,14 @@ Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymoti
 Download this extension from the [VS Gallery](https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion)
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
-## Key binding (for VsVim or ViEmu see below)
+## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
 Assign key combination through Tools->Options->Keyboard ( command name: Tools.InvokePeasyMotion )
+Two jump label assignment algorithms are available (Tools->Options->PeasyMotion options):
+* Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
+* Viewport relative - labels assigned from top to bottom of visible text in viewport.
+
+In caret relative mode you can adjust 'proximity' sensivity via "Caret position sensivity" option.
+When caret sensivity is not equal to 0, caret position is quantized into blocks of (sensivity+1) caret positions and is treated as beign located in the middle of encasing block.
 
 ## Compatibility with other plugins
 VsVim 
