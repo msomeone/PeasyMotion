@@ -1,4 +1,4 @@
-### 1.0.18
+### 1.0.20
 - Options added (Tools -> Options -> PeasyMotion options -> ...)
 - Added caret position sensivity option.
 - Added jump label assignment algorithm option.
