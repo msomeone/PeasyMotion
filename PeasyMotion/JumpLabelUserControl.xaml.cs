@@ -29,6 +29,7 @@ namespace PeasyMotion
             var str = GetTrimmedLabel(label); 
             this.Content = str;
             this.Background = Brushes.GreenYellow;
+            this.Foreground = Brushes.Sienna;
             this.Width = this.oneCharWidth * str.Length + BORDER;
             this.Height = bounds.Height;
    
