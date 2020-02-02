@@ -248,23 +248,6 @@ namespace PeasyMotion
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
-            /*
-PeasyMotion Adornment find words: 11 ms
-PeasyMotion Adornment sort words: 3 ms
-PeasyMotion Adornments create: 150 ms <----- WTF????????????????
-PeasyMotion Adornments group&create: 157 ms
-PeasyMotion FullExecTime: 300 ms
-
-PeasyMotion TryDisableVsVim: 86 ms <--------- WTF?????
-PeasyMotion GetTextStructureNavigator: 0 ms
-PeasyMotion Adornment find words: 19 ms
-PeasyMotion Adornment sort words: 4 ms
-PeasyMotion Adornments create: 210 ms
-PeasyMotion Adornments group&create: 218 ms
-PeasyMotion CreateInputListener: 1 ms
-PeasyMotion FullExecTime: 368 ms
-
-            */
 
 #if MEASUREEXECTIME
             watch.Stop();

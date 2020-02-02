@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Windows;
 using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.PlatformUI;
 
 namespace PeasyMotion
 { 
@@ -31,7 +32,7 @@ namespace PeasyMotion
         /// Text view where the adornment is created.
         /// </summary>
         private readonly IWpfTextView view;
-        private double emSize;
+        private JumpLabelUserControl.CachedSetupParams jumpLabelCachedSetupParams = new JumpLabelUserControl.CachedSetupParams();
 
         private struct Jump
         {
@@ -77,7 +78,8 @@ namespace PeasyMotion
             this.view = view;
             this.view.LayoutChanged += this.OnLayoutChanged;
 
-            this.emSize = this.view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize;
+            this.jumpLabelCachedSetupParams.fontRenderingEmSize = this.view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize;
+            this.jumpLabelCachedSetupParams.typeface = this.view.FormattedLineSource.DefaultTextProperties.Typeface;
 
             var jumpWords = new List<JumpWord>();
 
@@ -223,6 +225,7 @@ namespace PeasyMotion
             Trace.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem.ElapsedMilliseconds} ms");
             createAdornmentUIElem = null;
             Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
 #endif
         }
 
@@ -279,8 +282,6 @@ namespace PeasyMotion
                 level += 1;
             }
 
-            double emSize = this.emSize;
-
             var k = 0;
             var keyIndex = 0;
             foreach (int KeyCount2 in keyCounts)
@@ -314,10 +315,16 @@ namespace PeasyMotion
                         createAdornmentUIElem.Start();
                     }
 #endif
-                    var adornment = JumpLabelUserControl.GetFreeUserControl(jumpLabel, jw.adornmentBounds, emSize);
+                    var adornment = JumpLabelUserControl.GetFreeUserControl();
+                    adornment.setup(jumpLabel, jw.adornmentBounds, this.jumpLabelCachedSetupParams);
 
-                    Canvas.SetLeft(adornment, jw.adornmentBounds.Left);
-                    Canvas.SetTop(adornment, jw.adornmentBounds.Top);
+                    //var bg = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+                    //var fg = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey);
+                    //adornment.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(bg.A, bg.R, bg.G, bg.B));
+                    //adornment.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(fg.A, fg.R, fg.G, fg.B));
+                    //Canvas.SetRight(adornment, jw.adornmentBounds.Right+2);
+                    //Canvas.SetBottom(adornment, jw.adornmentBounds.Bottom+2);
+                    
 #if MEASUREEXECTIME
                     createAdornmentUIElem.Stop();
 #endif

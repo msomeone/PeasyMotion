@@ -6,10 +6,13 @@ using System.Windows.Media;
 
 namespace PeasyMotion
 {
+
     public partial class JumpLabelUserControl : UserControl
     {
-        private const int BORDER = 2;
-        private double oneCharWidth;
+        public struct CachedSetupParams {
+            public double fontRenderingEmSize;
+            public System.Windows.Media.Typeface typeface;
+        };
 
         private static string GetTrimmedLabel(string label) // trim max to two characters
         {
@@ -22,20 +25,20 @@ namespace PeasyMotion
             InitializeComponent();
         }
 
-        void init(string label, Rect bounds, double fontRenderingEmSize)
+        public void setup(string label, Rect bounds, JumpLabelUserControl.CachedSetupParams cachedParams)
         {
-            this.oneCharWidth = bounds.Width;
-
             var str = GetTrimmedLabel(label); 
             this.Content = str;
             this.Background = Brushes.GreenYellow;
             this.Foreground = Brushes.Sienna;
-            this.Width = this.oneCharWidth * str.Length + BORDER;
-            this.Height = bounds.Height;
    
-            this.FontWeight = FontWeights.Bold;
+            this.FontSize = cachedParams.fontRenderingEmSize;
+            this.FontFamily = cachedParams.typeface.FontFamily;
+            this.FontStyle = cachedParams.typeface.Style;
+            //this.FontWeight = cachedParams.typeface.Weight;
 
-            this.FontSize = fontRenderingEmSize;
+            Canvas.SetLeft(this, bounds.Left - this.Padding.Left);
+            Canvas.SetTop(this, bounds.Top - this.Padding.Top);
         }
 
         public void UpdateView(string alreadyPressedKeys)
@@ -43,7 +46,6 @@ namespace PeasyMotion
             _ = alreadyPressedKeys ?? throw new ArgumentNullException(nameof(alreadyPressedKeys), "cannot be null");
 
             var str = GetTrimmedLabel(alreadyPressedKeys);
-            this.Width = this.oneCharWidth * str.Length + BORDER;
             this.Content = str;
             if (str.Length == 1) {
                 this.Background = Brushes.LightGray;
@@ -51,17 +53,17 @@ namespace PeasyMotion
             }
         }
 
-        private static Stack<JumpLabelUserControl> cache = new Stack<JumpLabelUserControl>(1<<12);
+        private static Stack<JumpLabelUserControl> cache = new Stack<JumpLabelUserControl>(1<<13);
 
         // warmup just a lil bit, dont allocate whole capacity, as it may slow down on startup.
         public static void WarmupCache()
         {
-            for (int i = 0; i < 512; i++)
+            for (int i = 0; i < 4096; i++) // should be enough for viewport full of short words on ~3k screen with 14pt font
             {
                 cache.Push(new JumpLabelUserControl());
             }
         }
-        public static JumpLabelUserControl GetFreeUserControl(string label, Rect bounds, double fontRenderingEmSize)
+        public static JumpLabelUserControl GetFreeUserControl()
         {
             JumpLabelUserControl ctrl = null;
             if (1 > cache.Count)
@@ -70,7 +72,6 @@ namespace PeasyMotion
             } else {
                 ctrl = cache.Pop();
             }
-            ctrl.init(label, bounds, fontRenderingEmSize);
             return ctrl;
         }
 
