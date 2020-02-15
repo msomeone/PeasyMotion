@@ -7,7 +7,7 @@ namespace PeasyMotion.Options
     /// </summary>
     internal class BaseOptionPage<T> : DialogPage where T : BaseOptionModel<T>, new()
     {
-        private BaseOptionModel<T> _model;
+        public BaseOptionModel<T> _model;
 
         public BaseOptionPage()
         {

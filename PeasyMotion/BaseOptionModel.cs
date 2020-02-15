@@ -15,6 +15,8 @@ using Task = System.Threading.Tasks.Task;
 
 namespace PeasyMotion.Options
 {
+    [AttributeUsage(AttributeTargets.All)]
+    public class DisableOptionSerialization : Attribute {}
     /// <summary>
     /// A base class for specifying options
     /// </summary>
@@ -56,7 +58,7 @@ namespace PeasyMotion.Options
         public static async Task<T> CreateAsync()
         {
             var instance = new T();
-            await instance.LoadAsync();
+            await instance.LoadAsync().ConfigureAwait(true);
             return instance;
         }
 
@@ -78,7 +80,7 @@ namespace PeasyMotion.Options
         /// </summary>
         public virtual async Task LoadAsync()
         {
-            ShellSettingsManager manager = await _settingsManager.GetValueAsync();
+            ShellSettingsManager manager = await _settingsManager.GetValueAsync().ConfigureAwait(true);
             SettingsStore settingsStore = manager.GetReadOnlySettingsStore(SettingsScope.UserSettings);
 
             if (!settingsStore.CollectionExists(CollectionName))
@@ -107,6 +109,15 @@ namespace PeasyMotion.Options
         public virtual void Save()
         {
             ThreadHelper.JoinableTaskFactory.Run(SaveAsync);
+            ThreadHelper.JoinableTaskFactory.Run(LiveModelLoadAsync);
+        }
+
+        public virtual async Task LiveModelLoadAsync() {
+            T liveModel = await GetLiveInstanceAsync().ConfigureAwait(true);
+            if (this != liveModel)
+            {
+                await liveModel.LoadAsync().ConfigureAwait(true);
+            }
         }
 
         /// <summary>
@@ -126,13 +137,6 @@ namespace PeasyMotion.Options
             {
                 string output = SerializeValue(property.GetValue(this));
                 settingsStore.SetString(CollectionName, property.Name, output);
-            }
-
-            T liveModel = await GetLiveInstanceAsync();
-
-            if (this != liveModel)
-            {
-                await liveModel.LoadAsync();
             }
         }
 
@@ -168,7 +172,7 @@ namespace PeasyMotion.Options
         {
 #pragma warning disable VSTHRD010 
             // False-positive in Threading Analyzers. Bug tracked here https://github.com/Microsoft/vs-threading/issues/230
-            var svc = await AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof(SVsSettingsManager)) as IVsSettingsManager;
+            var svc = await AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof(SVsSettingsManager)).ConfigureAwait(true) as IVsSettingsManager;
 #pragma warning restore VSTHRD010 
 
             Assumes.Present(svc);
@@ -176,11 +180,15 @@ namespace PeasyMotion.Options
             return new ShellSettingsManager(svc);
         }
 
+        private bool IsSerDisabled(System.Type t) {
+            return t.Name == nameof(DisableOptionSerialization);
+        }
+
         private IEnumerable<PropertyInfo> GetOptionProperties()
         {
             return GetType()
                 .GetProperties()
-                .Where(p => p.PropertyType.IsSerializable && p.PropertyType.IsPublic);
+                .Where(p => (!IsSerDisabled(p.PropertyType)) && p.PropertyType.IsSerializable && p.PropertyType.IsPublic);
         }
     }
 }

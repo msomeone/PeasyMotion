@@ -12,6 +12,8 @@ namespace PeasyMotion
         public struct CachedSetupParams {
             public double fontRenderingEmSize;
             public System.Windows.Media.Typeface typeface;
+            public SolidColorBrush labelBg;
+            public SolidColorBrush labelFg;
         };
 
         private static string GetTrimmedLabel(string label) // trim max to two characters
@@ -29,8 +31,10 @@ namespace PeasyMotion
         {
             var str = GetTrimmedLabel(label); 
             this.Content = str;
-            this.Background = Brushes.GreenYellow;
-            this.Foreground = Brushes.Sienna;
+            //this.Background = Brushes.GreenYellow;
+            //this.Foreground = Brushes.Sienna;
+            this.Background = cachedParams.labelBg;
+            this.Foreground = cachedParams.labelFg;
    
             this.FontSize = cachedParams.fontRenderingEmSize;
             this.FontFamily = cachedParams.typeface.FontFamily;

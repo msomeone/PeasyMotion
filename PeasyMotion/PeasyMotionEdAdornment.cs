@@ -22,16 +22,17 @@ namespace PeasyMotion
     /// </summary>
     internal sealed class PeasyMotionEdAdornment
     {
-        private ITextStructureNavigator textStructureNavigator { get; set; }
-        /// <summary>
-        /// The layer of the adornment.
-        /// </summary>
+        private ITextStructureNavigator textStructureNavigator{ get; set; }
+            /// <summary>
+            /// The layer of the adornment.
+            /// </summary>
         private readonly IAdornmentLayer layer;
 
         /// <summary>
         /// Text view where the adornment is created.
         /// </summary>
         private readonly IWpfTextView view;
+        private VsSettings vsSettings;
         private JumpLabelUserControl.CachedSetupParams jumpLabelCachedSetupParams = new JumpLabelUserControl.CachedSetupParams();
 
         private struct Jump
@@ -54,6 +55,7 @@ namespace PeasyMotion
 
         public PeasyMotionEdAdornment() { // just for listener
         }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PeasyMotionEdAdornment"/> class.
         /// </summary>
@@ -66,7 +68,7 @@ namespace PeasyMotion
             }
 
             var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.jumpLabelAssignmentAlgorithm;
-            var caretPositionSensivity = Math.Min(Int32.MaxValue>>2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
+            var caretPositionSensivity = Math.Min(Int32.MaxValue >> 2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
 
             this.layer = view.GetAdornmentLayer("PeasyMotionEdAdornment");
 
@@ -74,12 +76,19 @@ namespace PeasyMotion
 
             this.textStructureNavigator = textStructNav;
 
-
             this.view = view;
             this.view.LayoutChanged += this.OnLayoutChanged;
 
+            this.vsSettings = VsSettings.GetOrCreate(view);
+            // subscribe to fmt updates, so user can tune color faster if PeasyMotion was invoked
+            this.vsSettings.PropertyChanged += this.OnFormattingPropertyChanged;
+
             this.jumpLabelCachedSetupParams.fontRenderingEmSize = this.view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize;
             this.jumpLabelCachedSetupParams.typeface = this.view.FormattedLineSource.DefaultTextProperties.Typeface;
+            this.jumpLabelCachedSetupParams.labelFg = this.vsSettings.JumpLabelForegroundColor;
+            this.jumpLabelCachedSetupParams.labelBg = this.vsSettings.JumpLabelBackgroundColor;
+            this.jumpLabelCachedSetupParams.labelFg.Freeze();
+            this.jumpLabelCachedSetupParams.labelBg.Freeze();
 
             var jumpWords = new List<JumpWord>();
 
@@ -121,13 +130,13 @@ namespace PeasyMotion
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
                 bool curIsControl = Char.IsControl(ch);
                 if (//TODO: anything faster and simpler ? will regex be faster?
-                        (
-                            (i==0) || // file start
-                            ((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
-                            ((prevIsLetterOrDigit || prevIsSeparator || prevIsControl || Char.IsWhiteSpace(prevChar)) && curIsPunctuation) // { } [] etc
-                        ) 
-                         && 
-                        ((lastJumpPos+2) < i) // make sure there is a lil bit of space between adornments
+                    (
+                    (i == 0) || // file start
+                        ((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
+                        ((prevIsLetterOrDigit || prevIsSeparator || prevIsControl || Char.IsWhiteSpace(prevChar)) && curIsPunctuation) // { } [] etc
+                        )
+                    &&
+                    ((lastJumpPos + 2) < i) // make sure there is a lil bit of space between adornments
                     )
                 {
                     SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(i, i + 1));
@@ -153,16 +162,16 @@ namespace PeasyMotion
             }
 #if false
             for (int i = 0; i < 256; i++) {
-                Trace.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i) );
-                Trace.WriteLine("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i) );
-                Trace.WriteLine("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i) );
-                Trace.WriteLine("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i) );
-                Trace.WriteLine("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i) );
-                Trace.WriteLine("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i) );
-                Trace.WriteLine("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i) );
-                Trace.WriteLine("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i) );
-                Trace.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i) );
-                Trace.WriteLine("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i) );
+                Trace.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Trace.WriteLine("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i));
+                Trace.WriteLine("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i));
+                Trace.WriteLine("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i));
+                Trace.WriteLine("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i));
+                Trace.WriteLine("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Trace.WriteLine("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i));
+                Trace.WriteLine("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i));
+                Trace.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i));
+                Trace.WriteLine("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i));
                 Trace.WriteLine("-----");
             }
 #endif
@@ -227,6 +236,39 @@ namespace PeasyMotion
             Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
             Trace.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
 #endif
+        }
+
+        ~PeasyMotionEdAdornment()
+        {
+            if (view != null) {
+                this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
+            }
+        }
+
+        public void Dispose()
+        {
+            this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
+        }
+
+        public void OnFormattingPropertyChanged(object o, System.ComponentModel.PropertyChangedEventArgs prop)
+        {
+            var val = vsSettings[prop.PropertyName];
+            // dont care about one-char labels that were update with UpdateView, update all labels' look
+            switch (prop.PropertyName)
+            {
+            case nameof(VsSettings.JumpLabelForegroundColor):
+                {
+                    var brush = val as SolidColorBrush;
+                    foreach(var j in currentJumps) { j.labelAdornment.Foreground = brush; }
+                }
+                break;
+            case nameof(VsSettings.JumpLabelBackgroundColor):
+                {
+                    var brush = val as SolidColorBrush;
+                    foreach(var j in currentJumps) { j.labelAdornment.Background = brush; }
+                }
+                break;
+            }
         }
 
         public struct JumpNode

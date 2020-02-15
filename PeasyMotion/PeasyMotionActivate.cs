@@ -1,5 +1,6 @@
 ﻿//#define MEASUREEXECTIME
 
+using System.Drawing;
 using System;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
@@ -9,9 +10,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
+using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
-using Microsoft.VisualStudio.ProjectSystem;
+using Microsoft.VisualStudio;
+//using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text.Editor;
@@ -58,6 +61,7 @@ namespace PeasyMotion
     /// <summary>
     /// Command handler
     /// </summary>
+    [Export]
     internal sealed class PeasyMotionActivate
     {
         /// <summary>
@@ -98,9 +102,54 @@ namespace PeasyMotion
         {
         }
 
+        private static System.Drawing.Color ConvertDTEColor(uint oleColor)
+        {
+            var sdColor = System.Drawing.ColorTranslator.FromOle((int)oleColor);
+            return System.Drawing.Color.FromArgb(sdColor.A, sdColor.R, sdColor.G, sdColor.B);
+        }
+
         public void Init()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+
+             try {
+                var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+                var props = dte.Properties["FontsAndColors", "TextEditor"];
+
+                var fac = (EnvDTE.FontsAndColorsItems)props.Item("FontsAndColorsItems").Object;
+                var enumfac = fac.GetEnumerator();
+                while (false != enumfac.MoveNext())
+                {
+                    var i = enumfac.Current;
+                    var i2 = (EnvDTE.ColorableItems)i;
+                    Trace.WriteLine($"{i2.Name}");
+                }
+
+                var colors = ConvertDTEColor(((EnvDTE.ColorableItems)fac.Item("Plain Text")).Foreground);
+                Trace.WriteLine($"{colors}");
+
+                //FontFamily = props.Item("FontFamily").Value.ToString();
+                //FontSize = (float)(short)props.Item("FontSize").Value;
+                //FontBold = colors.Bold;
+                //ForeColor = ColorTranslator.FromOle((int)colors.Foreground);
+                //BackColor = ColorTranslator.FromOle((int)colors.Background);
+
+                //colors = (EnvDTE.ColorableItems)fac.Item("Selected Text");
+
+                //HighlightFontBold = colors.Bold;
+                //HighlightForeColor = ColorTranslator.FromOle((int)colors.Foreground);
+                //HighlightBackColor = ColorTranslator.FromOle((int)colors.Background);
+            } catch (Exception ex) {
+                Trace.WriteLine("Error loading text editor font and colors");
+                Trace.WriteLine(ex.ToString());
+            }
+
+
+            var A = new EditorHostFactory();
+            var B = A.CreateCompositionContainer();
+            IEditorFormatMapService efms = B.GetExportedValue<IEditorFormatMapService>();
+            VsSettings.Initialize(this.pkg, efms);
+
             CreateMenu();
             cmdExec = new CommandExecutorService() {};
             disableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetDisabled);
@@ -149,6 +198,7 @@ namespace PeasyMotion
             Debug.Fail(msg);
             throw new Exception(msg);
         }
+
         public static async Task InitializeAsync(AsyncPackage package)
         {
             // Switch to the main thread - the call to AddCommand in PeasyMotionActivate's constructor requires
@@ -195,6 +245,7 @@ namespace PeasyMotion
                 textSearchService = textSearchService_,
                 textStructureNavigatorSelector = textStructureNavigatorSelector_,
             };
+
             Instance.Init();
         }
 
@@ -207,9 +258,9 @@ namespace PeasyMotion
         /// <param name="e">Event args.</param>
         private void Execute(object sender, EventArgs e)
         {
-#if MEASUREEXECTIME
+            #if MEASUREEXECTIME
             var watch = System.Diagnostics.Stopwatch.StartNew();
-#endif
+            #endif
             textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
             if (vsTextView == null) {
                 Debug.Fail("MenuItemCallback: could not retrieve current view");
@@ -220,7 +271,6 @@ namespace PeasyMotion
                 Debug.Fail("failed to retrieve current view");
                 return;
             }
-
 
             #if MEASUREEXECTIME
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
@@ -249,10 +299,10 @@ namespace PeasyMotion
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
 
-#if MEASUREEXECTIME
+            #if MEASUREEXECTIME
             watch.Stop();
             Trace.WriteLine($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
-#endif
+            #endif
         }
         private void TryDisableVsVim()
         {
