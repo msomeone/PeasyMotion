@@ -85,10 +85,11 @@ namespace PeasyMotion
 
             this.jumpLabelCachedSetupParams.fontRenderingEmSize = this.view.FormattedLineSource.DefaultTextProperties.FontRenderingEmSize;
             this.jumpLabelCachedSetupParams.typeface = this.view.FormattedLineSource.DefaultTextProperties.Typeface;
-            this.jumpLabelCachedSetupParams.labelFg = this.vsSettings.JumpLabelForegroundColor;
-            this.jumpLabelCachedSetupParams.labelBg = this.vsSettings.JumpLabelBackgroundColor;
-            this.jumpLabelCachedSetupParams.labelFg.Freeze();
-            this.jumpLabelCachedSetupParams.labelBg.Freeze();
+            this.jumpLabelCachedSetupParams.labelFg = this.vsSettings.JumpLabelFirstMotionForegroundColor;
+            this.jumpLabelCachedSetupParams.labelBg = this.vsSettings.JumpLabelFirstMotionBackgroundColor;
+            this.jumpLabelCachedSetupParams.labelFinalMotionFg = this.vsSettings.JumpLabelFinalMotionForegroundColor;
+            this.jumpLabelCachedSetupParams.labelFinalMotionBg = this.vsSettings.JumpLabelFinalMotionBackgroundColor;
+            this.jumpLabelCachedSetupParams.Freeze();
 
             var jumpWords = new List<JumpWord>();
 
@@ -253,19 +254,30 @@ namespace PeasyMotion
         public void OnFormattingPropertyChanged(object o, System.ComponentModel.PropertyChangedEventArgs prop)
         {
             var val = vsSettings[prop.PropertyName];
-            // dont care about one-char labels that were update with UpdateView, update all labels' look
             switch (prop.PropertyName)
             {
-            case nameof(VsSettings.JumpLabelForegroundColor):
+            case nameof(VsSettings.JumpLabelFirstMotionForegroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { j.labelAdornment.Foreground = brush; }
+                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length>1) j.labelAdornment.Foreground = brush; }
                 }
                 break;
-            case nameof(VsSettings.JumpLabelBackgroundColor):
+            case nameof(VsSettings.JumpLabelFirstMotionBackgroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { j.labelAdornment.Background = brush; }
+                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length>1) j.labelAdornment.Background = brush; }
+                }
+                break;
+            case nameof(VsSettings.JumpLabelFinalMotionForegroundColor):
+                {
+                    var brush = val as SolidColorBrush;
+                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length==1) j.labelAdornment.Foreground = brush; }
+                }
+                break;
+            case nameof(VsSettings.JumpLabelFinalMotionBackgroundColor):
+                {
+                    var brush = val as SolidColorBrush;
+                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length==1) j.labelAdornment.Background = brush; }
                 }
                 break;
             }
@@ -359,13 +371,6 @@ namespace PeasyMotion
 #endif
                     var adornment = JumpLabelUserControl.GetFreeUserControl();
                     adornment.setup(jumpLabel, jw.adornmentBounds, this.jumpLabelCachedSetupParams);
-
-                    //var bg = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
-                    //var fg = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey);
-                    //adornment.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(bg.A, bg.R, bg.G, bg.B));
-                    //adornment.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromArgb(fg.A, fg.R, fg.G, fg.B));
-                    //Canvas.SetRight(adornment, jw.adornmentBounds.Right+2);
-                    //Canvas.SetBottom(adornment, jw.adornmentBounds.Bottom+2);
                     
 #if MEASUREEXECTIME
                     createAdornmentUIElem.Stop();
@@ -472,7 +477,7 @@ namespace PeasyMotion
 
                 foreach(Jump j in currentJumps)
                 {
-                    j.labelAdornment.UpdateView(j.label.Substring(label.Length));
+                    j.labelAdornment.UpdateView(j.label.Substring(label.Length), this.jumpLabelCachedSetupParams);
                 }
             }
             return false;

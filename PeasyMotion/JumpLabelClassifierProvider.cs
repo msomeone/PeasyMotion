@@ -23,62 +23,37 @@ using System.Windows.Media;
 
 namespace PeasyMotion
 {
-/*
-    internal class ToDoTag : IGlyphTag { }
-    internal class ToDoTagger : ITagger<ToDoTag>
-    {
-        IEnumerable<ITagSpan<ToDoTag>> ITagger<ToDoTag>.GetTags(NormalizedSnapshotSpanCollection spans) { return null; }
-
-        public event EventHandler<SnapshotSpanEventArgs> TagsChanged { add {} remove {} }
-    }
-
-    class ToDoClassifier : IClassifier
-    {
-        internal ToDoClassifier() { }
-
-        public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span) => null;// new List<ClassificationSpan>();
-
-        public event EventHandler<ClassificationChangedEventArgs> ClassificationChanged { add {} remove {} }
-    }
-    [Export(typeof(IClassifierProvider))]
-    [ContentType("text")]
-    internal class ToDoClassifierProvider : IClassifierProvider
-    {
-        [Export(typeof(ClassificationTypeDefinition))]
-        [Name("PeasyMotionColors")]
-        internal ClassificationTypeDefinition ToDoClassificationType = null;
-
-        [Import]
-        internal IClassificationTypeRegistryService ClassificationRegistry = null;
-
-        [Import]
-        internal IBufferTagAggregatorFactoryService _tagAggregatorFactory = null;
-
-        public IClassifier GetClassifier(ITextBuffer buffer)
-        {
-            //IClassificationType classificationType = ClassificationRegistry.GetClassificationType("PeasyMotionColors");
-            //_ = _tagAggregatorFactory.CreateTagAggregator<ToDoTag>(buffer);
-            return null;
-        }
-    }*/
-
     /// <summary>
-    /// Set the display values for the classification
+    // Fake format definition, we do not add any classifiers. All we want to do is add label color option into Fonts And Colors TextEditor category
+    // That is why we provide one format Definition.
     /// </summary>
-    //[ClassificationType(ClassificationTypeNames = "PeasyMotionColors")]
-    //[Order(After = Priority.High)]
     [Export(typeof(EditorFormatDefinition))]
-    [Name("PeasyMotionJumplabel")]
+    [Name("PeasyMotionJumpLabelFirstMotion")]
     [UserVisible(true)]
-    internal sealed class PeasyMotionJumplabelFormatDef : ClassificationFormatDefinition
+    internal sealed class JumpLabelFirstMotionFormatDef : ClassificationFormatDefinition
     {
-        public const string FMT_NAME = "PeasyMotionJumplabel";
-        public PeasyMotionJumplabelFormatDef()
+        public const string FMT_NAME = "PeasyMotionJumpLabelFirstMotion";
+        public JumpLabelFirstMotionFormatDef()
         {
-            DisplayName = "PeasyMotion Jump label 3"; //human readable version of the name
+            DisplayName = "PeasyMotion First Motion Jump label color"; //human readable version of the name
             BackgroundOpacity = 1;
-            BackgroundColor = System.Windows.Media.Colors.White; //GeneralOptions.Instance.JumpLabelBackgroundColorMediaColor;
-            ForegroundColor = System.Windows.Media.Colors.Black; //GeneralOptions.Instance.JumpLabelForegroundColorMediaColor;
+            BackgroundColor = System.Windows.Media.Colors.Black;
+            ForegroundColor = System.Windows.Media.Colors.LightGray;
+        }
+    }
+
+    [Export(typeof(EditorFormatDefinition))]
+    [Name("PeasyMotionJumpLabelFinalMotion")]
+    [UserVisible(true)]
+    internal sealed class JumpLabelFinalMotionFormatDef : ClassificationFormatDefinition
+    {
+        public const string FMT_NAME = "PeasyMotionJumpLabelFinalMotion";
+        public JumpLabelFinalMotionFormatDef()
+        {
+            DisplayName = "PeasyMotion Final Motion Jump label color"; //human readable version of the name
+            BackgroundOpacity = 1;
+            BackgroundColor = System.Windows.Media.Colors.LightGray;
+            ForegroundColor = System.Windows.Media.Colors.Red;
         }
     }
 }

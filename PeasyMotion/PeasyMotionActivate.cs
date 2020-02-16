@@ -110,45 +110,12 @@ namespace PeasyMotion
 
         public void Init()
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-             try {
-                var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
-                var props = dte.Properties["FontsAndColors", "TextEditor"];
-
-                var fac = (EnvDTE.FontsAndColorsItems)props.Item("FontsAndColorsItems").Object;
-                var enumfac = fac.GetEnumerator();
-                while (false != enumfac.MoveNext())
-                {
-                    var i = enumfac.Current;
-                    var i2 = (EnvDTE.ColorableItems)i;
-                    Trace.WriteLine($"{i2.Name}");
-                }
-
-                var colors = ConvertDTEColor(((EnvDTE.ColorableItems)fac.Item("Plain Text")).Foreground);
-                Trace.WriteLine($"{colors}");
-
-                //FontFamily = props.Item("FontFamily").Value.ToString();
-                //FontSize = (float)(short)props.Item("FontSize").Value;
-                //FontBold = colors.Bold;
-                //ForeColor = ColorTranslator.FromOle((int)colors.Foreground);
-                //BackColor = ColorTranslator.FromOle((int)colors.Background);
-
-                //colors = (EnvDTE.ColorableItems)fac.Item("Selected Text");
-
-                //HighlightFontBold = colors.Bold;
-                //HighlightForeColor = ColorTranslator.FromOle((int)colors.Foreground);
-                //HighlightBackColor = ColorTranslator.FromOle((int)colors.Background);
-            } catch (Exception ex) {
-                Trace.WriteLine("Error loading text editor font and colors");
-                Trace.WriteLine(ex.ToString());
+            {
+                var A = new EditorHostFactory();
+                var B = A.CreateCompositionContainer();
+                IEditorFormatMapService efms = B.GetExportedValue<IEditorFormatMapService>();
+                VsSettings.Initialize(this.pkg, efms);
             }
-
-
-            var A = new EditorHostFactory();
-            var B = A.CreateCompositionContainer();
-            IEditorFormatMapService efms = B.GetExportedValue<IEditorFormatMapService>();
-            VsSettings.Initialize(this.pkg, efms);
 
             CreateMenu();
             cmdExec = new CommandExecutorService() {};

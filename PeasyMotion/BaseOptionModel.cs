@@ -180,7 +180,7 @@ namespace PeasyMotion.Options
             return new ShellSettingsManager(svc);
         }
 
-        private bool IsSerDisabled(System.Type t) {
+        private bool IsSerializationDisabled(System.Type t) {
             return t.Name == nameof(DisableOptionSerialization);
         }
 
@@ -188,7 +188,7 @@ namespace PeasyMotion.Options
         {
             return GetType()
                 .GetProperties()
-                .Where(p => (!IsSerDisabled(p.PropertyType)) && p.PropertyType.IsSerializable && p.PropertyType.IsPublic);
+                .Where(p => (!IsSerializationDisabled(p.PropertyType)) && p.PropertyType.IsSerializable && p.PropertyType.IsPublic);
         }
     }
 }

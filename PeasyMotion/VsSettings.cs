@@ -110,56 +110,57 @@ namespace PeasyMotion
         private readonly IWpfTextView textView;
         private readonly IEditorFormatMap editorFormatMap;
 
-        private SolidColorBrush highContrastSelectionFg;
-        public SolidColorBrush HighContrastSelectionFg
-        {
-            get { return highContrastSelectionFg; }
-            private set { 
-                bool notify = HighContrastSelectionFg == null || value == null || value.Color != HighContrastSelectionFg.Color;
-                highContrastSelectionFg = value; 
-                highContrastSelectionFg.Freeze(); 
-                if (notify) OnPropertyChanged(nameof(HighContrastSelectionFg)); 
-            }
-        }
-        private SolidColorBrush highContrastSelectionBg;
-        public SolidColorBrush HighContrastSelectionBg
-        {
-            get { return highContrastSelectionBg; }
-            private set { 
-                bool notify = HighContrastSelectionBg == null || value == null || value.Color != HighContrastSelectionBg.Color;
-                highContrastSelectionBg = value; 
-                highContrastSelectionBg.Freeze();
-                if (notify) OnPropertyChanged(nameof(HighContrastSelectionBg)); 
-            }
-        }
-
-        private SolidColorBrush jumpLabelFg;
-        public SolidColorBrush JumpLabelForegroundColor
-        {
-            get { return jumpLabelFg; }
-            private set { 
-                bool notify = JumpLabelForegroundColor == null || value == null || value.Color != JumpLabelForegroundColor.Color;
-                jumpLabelFg = value; 
-                jumpLabelFg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set FG={JumpLabelForegroundColor.Color} notify={notify}");
-                if (notify) OnPropertyChanged(nameof(JumpLabelForegroundColor)); 
-            }
-        }
-        private SolidColorBrush jumpLabelBg;
-        public SolidColorBrush JumpLabelBackgroundColor
-        {
-            get { return jumpLabelBg; }
-            private set { 
-                bool notify = JumpLabelBackgroundColor == null || value == null || value.Color != JumpLabelBackgroundColor.Color;
-                jumpLabelBg = value;
-                jumpLabelBg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set BG={JumpLabelBackgroundColor.Color} notify={notify}");
-                if (notify) OnPropertyChanged(nameof(JumpLabelBackgroundColor)); 
-            }
-        }
-            
-
         public event PropertyChangedEventHandler PropertyChanged;
+
+        private SolidColorBrush jumpLabelFirstMotionColorFg;
+        public SolidColorBrush JumpLabelFirstMotionForegroundColor
+        {
+            get { return jumpLabelFirstMotionColorFg; }
+            private set { 
+                bool notify = JumpLabelFirstMotionForegroundColor == null || value == null || value.Color != JumpLabelFirstMotionForegroundColor.Color;
+                jumpLabelFirstMotionColorFg = value; 
+                jumpLabelFirstMotionColorFg.Freeze();
+                Trace.WriteLine($"VsSettings.Property Set FG={JumpLabelFirstMotionForegroundColor.Color} notify={notify}");
+                if (notify) OnPropertyChanged(nameof(JumpLabelFirstMotionForegroundColor)); 
+            }
+        }
+        private SolidColorBrush jumpLabelFirstMotionColorBg;
+        public SolidColorBrush JumpLabelFirstMotionBackgroundColor
+        {
+            get { return jumpLabelFirstMotionColorBg; }
+            private set { 
+                bool notify = JumpLabelFirstMotionBackgroundColor == null || value == null || value.Color != JumpLabelFirstMotionBackgroundColor.Color;
+                jumpLabelFirstMotionColorBg = value;
+                jumpLabelFirstMotionColorBg.Freeze();
+                Trace.WriteLine($"VsSettings.Property Set BG={JumpLabelFirstMotionBackgroundColor.Color} notify={notify}");
+                if (notify) OnPropertyChanged(nameof(JumpLabelFirstMotionBackgroundColor)); 
+            }
+        }
+
+        private SolidColorBrush jumpLabelFinalMotionColorFg;
+        public SolidColorBrush JumpLabelFinalMotionForegroundColor
+        {
+            get { return jumpLabelFinalMotionColorFg; }
+            private set { 
+                bool notify = JumpLabelFinalMotionForegroundColor == null || value == null || value.Color != JumpLabelFinalMotionForegroundColor.Color;
+                jumpLabelFinalMotionColorFg = value; 
+                jumpLabelFinalMotionColorFg.Freeze();
+                Trace.WriteLine($"VsSettings.Property Set FG={JumpLabelFinalMotionForegroundColor.Color} notify={notify}");
+                if (notify) OnPropertyChanged(nameof(JumpLabelFinalMotionForegroundColor)); 
+            }
+        }
+        private SolidColorBrush jumpLabelFinalMotionColorBg;
+        public SolidColorBrush JumpLabelFinalMotionBackgroundColor
+        {
+            get { return jumpLabelFinalMotionColorBg; }
+            private set { 
+                bool notify = JumpLabelFinalMotionBackgroundColor == null || value == null || value.Color != JumpLabelFinalMotionBackgroundColor.Color;
+                jumpLabelFinalMotionColorBg = value;
+                jumpLabelFinalMotionColorBg.Freeze();
+                Trace.WriteLine($"VsSettings.Property Set BG={JumpLabelFinalMotionBackgroundColor.Color} notify={notify}");
+                if (notify) OnPropertyChanged(nameof(JumpLabelFinalMotionBackgroundColor)); 
+            }
+        }
 
         // https://stackoverflow.com/questions/10283206/setting-getting-the-class-properties-by-string-name
         public object this[string propertyName] 
@@ -191,6 +192,18 @@ namespace PeasyMotion
                 }
             }
         }
+
+        public static void NotifyInstancesPropertyColorSourceChanged(string propertyName, string newColorSource)
+        {
+            Trace.WriteLine($"GeneralOptions.SetColor -> VsSettings.NotifyJumpLabelColorSourceChanged newColorSource={newColorSource}");
+            lock (Instances)
+            {
+                foreach (var i in Instances) { 
+                    i.Value.FetchColor(propertyName, newColorSource);
+                }
+            }
+        }
+
 
         public static VsSettings GetOrCreate(IWpfTextView textView)
         {
@@ -229,48 +242,54 @@ namespace PeasyMotion
             ReloadColors();
 
             editorFormatMap.FormatMappingChanged += OnFormatItemsChanged;
-            textView.BackgroundBrushChanged += OnBackgroundBrushChanged;
         }
 
         private void ReloadColors()
         {
-            //GeneralOptions.Instance.LoadColors(VsSettings.serviceProvider);
-            HighContrastSelectionFg = GetBrush(editorFormatMap, "Selected Text in High Contrast", BrushType.Foreground, textView);
-            HighContrastSelectionBg = GetBrush(editorFormatMap, "Selected Text in High Contrast", BrushType.Background, textView);
+            //ighContrastSelectionFg = GetBrush(editorFormatMap, "Selected Text in High Contrast", BrushType.Foreground, textView);
+            //ighContrastSelectionBg = GetBrush(editorFormatMap, "Selected Text in High Contrast", BrushType.Background, textView);
+            FetchColor(nameof(JumpLabelFirstMotionForegroundColor), GeneralOptions.Instance.JumplabelFirstMotionColorSource);
+            FetchColor(nameof(JumpLabelFirstMotionBackgroundColor), GeneralOptions.Instance.JumplabelFirstMotionColorSource);
+            Trace.WriteLine($"JUMP LABEL FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor.Color}");
+            FetchColor(nameof(JumpLabelFinalMotionForegroundColor), GeneralOptions.Instance.JumplabelFinalMotionColorSource);
+            FetchColor(nameof(JumpLabelFinalMotionBackgroundColor), GeneralOptions.Instance.JumplabelFinalMotionColorSource);
+            Trace.WriteLine($"JUMP LABEL FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor.Color}");
+        }
 
-            Trace.WriteLine("VsSettings.ReloadColors settings FG & BG brushes");
-            JumpLabelForegroundColor = GetBrush(editorFormatMap, PeasyMotionJumplabelFormatDef.FMT_NAME, BrushType.Foreground, textView);
-            JumpLabelBackgroundColor = GetBrush(editorFormatMap, PeasyMotionJumplabelFormatDef.FMT_NAME, BrushType.Background, textView);
-            Trace.WriteLine($"JUMP LABEL FG={JumpLabelForegroundColor.Color} BG={JumpLabelBackgroundColor.Color}");
-
-           //HighContrastSelectionFg = GetBrush(editorFormatMap, "HTML Operator", BrushType.Foreground, textView);
-           //HighContrastSelectionBg = GetBrush(editorFormatMap, "HTML Operator", BrushType.Background, textView);
+        private void FetchColor(string colorPropertyName, string sourceName)
+        {
+            BrushType brushType;
+            if (colorPropertyName.Contains("Background")) {
+                brushType = BrushType.Background;
+            } else if (colorPropertyName.Contains("Foreground")) {
+                brushType = BrushType.Foreground;
+            } else {
+                var msg = $"PeasyMotion: VsSettings - unable to deduce brush type from color property name={colorPropertyName}!";
+                Debug.Fail(msg);
+                throw new Exception(msg);
+            }
+            Trace.WriteLine($"VsSettings.FetchColor settings COLOR={colorPropertyName} BRUSH_TYPE={brushType}, Source={sourceName}");
+            this[colorPropertyName] = GetBrush(editorFormatMap, sourceName, brushType, textView);
         }
 
         private void OnFormatItemsChanged(object sender, FormatItemsEventArgs args)
         {
-            if (args.ChangedItems.Any(i => i == PeasyMotionJumplabelFormatDef.FMT_NAME))
+            if (args.ChangedItems.Any(i => i == JumpLabelFirstMotionFormatDef.FMT_NAME))
             {
                 ReloadColors();
-                Trace.WriteLine("VsSettings.OnFormatItemsChanged, FG={JumpLabelForegroundColor.Color} BG={JumpLabelBackgroundColor}");
+                Trace.WriteLine("VsSettings.OnFormatItemsChanged, FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor}");
                 Trace.WriteLine("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
-                GeneralOptions.Instance.JumpLabelForegroundColor = GeneralOptions.toDrawingColor(this.JumpLabelForegroundColor.Color);
-                GeneralOptions.Instance.JumpLabelBackgroundColor = GeneralOptions.toDrawingColor(this.JumpLabelBackgroundColor.Color);
-
-               // editorFormatMap.FormatMappingChanged -= OnFormatItemsChanged;
-                //Trace.WriteLine("VsSettings.OnFormatItemsChanged Saving GeneralOptions.SaveColors");
-                //GeneralOptions.Instance.SaveColors(VsSettings.serviceProvider);
-                //editorFormatMap.FormatMappingChanged += OnFormatItemsChanged;
+                GeneralOptions.Instance.JumpLabelFirstMotionForegroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFirstMotionForegroundColor.Color);
+                GeneralOptions.Instance.JumpLabelFirstMotionBackgroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFirstMotionBackgroundColor.Color);
             }
-        }
-
-        private void OnBackgroundBrushChanged(object sender, BackgroundBrushChangedEventArgs args)
-        {
-            ReloadColors();
-        }
-        private void OnForegroundBrushChanged(object sender, BackgroundBrushChangedEventArgs args)
-        {
-            ReloadColors();
+            else if (args.ChangedItems.Any(i => i == JumpLabelFinalMotionFormatDef.FMT_NAME))
+            {
+                ReloadColors();
+                Trace.WriteLine("VsSettings.OnFormatItemsChanged, FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor}");
+                Trace.WriteLine("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
+                GeneralOptions.Instance.JumpLabelFinalMotionForegroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFinalMotionForegroundColor.Color);
+                GeneralOptions.Instance.JumpLabelFinalMotionBackgroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFinalMotionBackgroundColor.Color);
+            }
         }
 
         private static SolidColorBrush GetBrush(IEditorFormatMap editorFormatMap, string propertyName, BrushType type, IWpfTextView textView)
@@ -318,7 +337,6 @@ namespace PeasyMotion
         public void Dispose()
         {
             editorFormatMap.FormatMappingChanged -= OnFormatItemsChanged;
-            textView.BackgroundBrushChanged -= OnBackgroundBrushChanged;
         }
 
         private enum BrushType

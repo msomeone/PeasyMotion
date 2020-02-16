@@ -1,3 +1,24 @@
+    #define MEASUREEXECTIME
+
+// Options based on VSSDK Options code + some stackoverflow recipes and few classes from VsVim :}
+// original ColorKey, ColorInfo, LoadColor*, SaveColor from VsVim/Src/VsVimShared/Implementation/OptionPages/DefaultOptionPage.cs
+// 
+/* VsVim licence:
+Copyright 2012 Jared Parsons
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 using System.Diagnostics;
 using System.ComponentModel;
 using Microsoft.VisualStudio.Shell;
@@ -15,36 +36,83 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Collections;
 using System.Windows.Media;
+using System.Drawing.Design;
+using System.Runtime.CompilerServices;
 
 namespace PeasyMotion
 {
-#region ColorKey 
+
+public enum JumpLabelAssignmentAlgorithm
+{
+    CaretRelative,
+    ViewportRelative
+}
+
+public class TextEditorFontsAndColorsItemsList 
+{
+    private static List<string> _colorableItemsCached = new List<string>();
+    public static List<string> ColorableItemsCached
+    {
+        get {
+            if (_colorableItemsCached.Count == 0) {
+                obtainItems();
+            }
+            return _colorableItemsCached;
+        }       
+    }
+
+    private static void obtainItems() {
+        #if MEASUREEXECTIME
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        #endif
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+         try {
+            var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE.DTE;
+            var props = dte.Properties["FontsAndColors", "TextEditor"];
+            var fac = (EnvDTE.FontsAndColorsItems)props.Item("FontsAndColorsItems").Object;
+            var enumfac = fac.GetEnumerator();
+            while (false != enumfac.MoveNext())
+            {
+                var i = enumfac.Current; var i2 = (EnvDTE.ColorableItems)i;
+                _colorableItemsCached.Add(i2.Name);
+            }
+            //var colors = ConvertDTEColor(((EnvDTE.ColorableItems)fac.Item("Plain Text")).Foreground);
+            //FontFamily = props.Item("FontFamily").Value.ToString(); //FontSize = (float)(short)props.Item("FontSize").Value; //FontBold = colors.Bold;
+            //ForeColor = ColorTranslator.FromOle((int)colors.Foreground); //BackColor = ColorTranslator.FromOle((int)colors.Background);
+            //colors = (EnvDTE.ColorableItems)fac.Item("Selected Text");
+            //HighlightFontBold = colors.Bold; //HighlightForeColor = ColorTranslator.FromOle((int)colors.Foreground); //HighlightBackColor = ColorTranslator.FromOle((int)colors.Background);
+        } catch (Exception ex) {
+            Trace.WriteLine("Error loading text editor font and colors");
+            Trace.WriteLine(ex.ToString());
+        }
+        #if MEASUREEXECTIME
+        watch.Stop();
+        Trace.WriteLine($"PeasyMotion TextEditorFontsAndColorsItemsList obtaining FontsAndColorsItems took {watch.ElapsedMilliseconds} ms");
+        #endif
+    }
+}
+
+// GitHub search helper (spent ~5 hours googling out this simple snippet T_T)
+// provides ComboBox DropDown for string list Property converter DialogPage List<string> List<String> PorpertyGrid Options Dialog ProvideOptionPage
+// TypeConverter ListBox blah blah any other search keywords?
+public class TextEditorClassificationStringConverter : StringConverter
+{
+    public override Boolean GetStandardValuesSupported(ITypeDescriptorContext context) { return true; }
+    public override Boolean GetStandardValuesExclusive(ITypeDescriptorContext context) { return true; }
+    public override TypeConverter.StandardValuesCollection GetStandardValues(ITypeDescriptorContext context) {
+        return new StandardValuesCollection(new List<string>(TextEditorFontsAndColorsItemsList.ColorableItemsCached));
+    }
+}
 
 readonly struct ColorKey
 {
     internal readonly string Name;
     internal readonly bool IsForeground;
-
-    internal ColorKey(string name, bool isForeground)
-    {
-        Name = name;
-        IsForeground = isForeground;
-    }
-
-    internal static ColorKey Foreground(string name)
-    {
-        return new ColorKey(name, isForeground: true);
-    }
-
-    internal static ColorKey Background(string name)
-    {
-        return new ColorKey(name, isForeground: false);
-    }
+    internal ColorKey(string name, bool isForeground) { Name = name; IsForeground = isForeground; }
+    internal static ColorKey Foreground(string name) { return new ColorKey(name, isForeground: true); }
+    internal static ColorKey Background(string name) { return new ColorKey(name, isForeground: false); }
 }
-
-#endregion
-
-#region ColorInfo
 
 sealed class ColorInfo
 {
@@ -53,77 +121,112 @@ sealed class ColorInfo
     internal bool IsValid;
     internal System.Drawing.Color Color;
 
-    internal ColorInfo(ColorKey colorKey, System.Drawing.Color color, bool isValid = true)
-    {
-        ColorKey = colorKey;
-        OriginalColor = color;
-        Color = color;
-        IsValid = isValid;
-    }
+    internal ColorInfo(ColorKey colorKey, System.Drawing.Color color, bool isValid = true) { ColorKey = colorKey; OriginalColor = color; Color = color; IsValid = isValid; }
 }
-
-#endregion
 
 internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 {
-    private static readonly ColorKey s_jumplabelBG = ColorKey.Background(PeasyMotionJumplabelFormatDef.FMT_NAME);
-    private static readonly ColorKey s_jumplabelFG = ColorKey.Foreground(PeasyMotionJumplabelFormatDef.FMT_NAME);
+    private static readonly ColorKey s_jumpLabelFirstMotionColorBg = ColorKey.Background(JumpLabelFirstMotionFormatDef.FMT_NAME);
+    private static readonly ColorKey s_jumpLabelFirstMotionColorFg = ColorKey.Foreground(JumpLabelFirstMotionFormatDef.FMT_NAME);
+    private static readonly ColorKey s_jumpLabelFinalMotionColorBg = ColorKey.Background(JumpLabelFinalMotionFormatDef.FMT_NAME);
+    private static readonly ColorKey s_jumpLabelFinalMotionColorFg = ColorKey.Foreground(JumpLabelFinalMotionFormatDef.FMT_NAME);
 
     private static readonly ReadOnlyCollection<ColorKey> s_colorKeyList = new ReadOnlyCollection<ColorKey>(new[]
     {
-        s_jumplabelBG,
-        s_jumplabelFG,
+        s_jumpLabelFirstMotionColorBg,
+        s_jumpLabelFirstMotionColorFg,
+        s_jumpLabelFinalMotionColorBg,
+        s_jumpLabelFinalMotionColorFg,
     });
 
     private readonly Dictionary<ColorKey, ColorInfo> colorMap = new Dictionary<ColorKey, ColorInfo>();
-
+    
     public GeneralOptions()
     {
-        foreach (var colorKey in s_colorKeyList)
-        {
+        foreach (var colorKey in s_colorKeyList) {
             colorMap[colorKey] = new ColorInfo(colorKey, System.Drawing.Color.Black);
         }
     }
 
-    [Category("General")]
-    [DisplayName("Jump label background color")]
-    [DisableOptionSerialization]
-    public System.Drawing.Color JumpLabelBackgroundColor
-    {
-        get { return GetColor(s_jumplabelBG); }
-        set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelBackgroundColor property set color={value}");
-            if (JumpLabelBackgroundColor != value) { // avoid infinite notification loop between VsSettings and GeneralOptions
-                Trace.WriteLine($"GeneralOptions.JumpLabelBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
-            }
-            SetColor(nameof(JumpLabelBackgroundColor), s_jumplabelBG, value);
-        }
+    private bool isJumpLabelFirstMotionColorSourceItsOwn() {
+        return JumplabelFirstMotionColorSource == JumpLabelFirstMotionFormatDef.FMT_NAME;
     }
 
     [Category("General")]
-    [DisplayName("Jump label foreground color")]
-    [DisableOptionSerialization]
-    public System.Drawing.Color JumpLabelForegroundColor
+    [DisplayName("First motion jump label background color")]
+    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'first motion' jump label colors from' is equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME)]
+    public System.Drawing.Color JumpLabelFirstMotionBackgroundColor
     {
-        get { return GetColor(s_jumplabelFG); }
+        get { return GetColor(s_jumpLabelFirstMotionColorBg); }
         set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelForegroundColor property set color={value}");
-            if (JumpLabelForegroundColor != value) { // avoid infinite notification loop between VsSettings and GeneralOptions
-                Trace.WriteLine($"GeneralOptions.JumpLabelForegroundColor property differs by val. Calling GeneralOptions.SetColor");
+            Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property set color={value}");
+            if (JumpLabelFirstMotionBackgroundColor != value) {
+                Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
-            SetColor(nameof(JumpLabelForegroundColor), s_jumplabelFG, value);
+            SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionBackgroundColor), s_jumpLabelFirstMotionColorBg, value);
         }
     }
 
-    public static System.Windows.Media.Color fromDrawingColor(System.Drawing.Color c) {
-        return System.Windows.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
-    }
-    public static System.Drawing.Color toDrawingColor(System.Windows.Media.Color c) {
-        return System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
+
+
+    [Category("General")]
+    [DisplayName("First motion jump label foreground color")]
+    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'first motion' jump label colors from' is equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME)]
+    public System.Drawing.Color JumpLabelFirstMotionForegroundColor
+    {
+        get { return GetColor(s_jumpLabelFirstMotionColorFg); }
+        set { 
+            Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property set color={value}");
+            if (JumpLabelFirstMotionForegroundColor != value) {
+                Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
+            }
+            SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionForegroundColor), s_jumpLabelFirstMotionColorFg, value);
+        }
     }
 
-    public System.Windows.Media.Color getJumpLabelBackgroundColorMediaColor() { return fromDrawingColor(JumpLabelBackgroundColor); }
-    public System.Windows.Media.Color getJumpLabelForegroundColorMediaColor() { return fromDrawingColor(JumpLabelForegroundColor); }
+
+
+    private bool isJumpLabelFinalMotionColorSourceItsOwn() {
+        return JumplabelFinalMotionColorSource == JumpLabelFinalMotionFormatDef.FMT_NAME;
+    }
+
+    [Category("General")]
+    [DisplayName("Final motion jump label background color")]
+    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'final motion' jump label colors from' is equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME)]
+    public System.Drawing.Color JumpLabelFinalMotionBackgroundColor
+    {
+        get { return GetColor(s_jumpLabelFinalMotionColorBg); }
+        set { 
+            Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property set color={value}");
+            if (JumpLabelFinalMotionBackgroundColor != value) {
+                Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
+            }
+            SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionBackgroundColor), s_jumpLabelFinalMotionColorBg, value);
+        }
+    }
+
+
+    [Category("General")]
+    [DisplayName("Final motion jump label foreground color")]
+    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'Final motion' jump label colors from' is equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME)]
+    public System.Drawing.Color JumpLabelFinalMotionForegroundColor
+    {
+        get { return GetColor(s_jumpLabelFinalMotionColorFg); }
+        set { 
+            Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property set color={value}");
+            if (JumpLabelFinalMotionForegroundColor != value) {
+                Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
+            }
+            SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionForegroundColor), s_jumpLabelFinalMotionColorFg, value);
+        }
+    }
+
+
+
 
     [Category("General")]
     [DisplayName("Jump label assignment algorithm")]
@@ -135,6 +238,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             "Jump labels will be reproducible for caret positions differing \u00B1sensivity chars.\n" +
             "- ViewportRelative - assign labels starting from text viewport top, ignoring caret position."
             )]
+    //[TypeConverter(typeof(EnumConverter))]
     [DefaultValue(JumpLabelAssignmentAlgorithm.CaretRelative)]
     public JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm { get; set; } = JumpLabelAssignmentAlgorithm.CaretRelative;
 
@@ -146,37 +250,73 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             )]
     [DefaultValue(0)]
     public int caretPositionSensivity { get; set; } = 0;
-    /*
-    [Category("General")]
-    [DisplayName("ListTEST")]
-    [Description(
-            "!!!!!!!!!!!!!!!!\n"
-            )]
-    public System.Drawing.Color labelColor{ get; set; } = System.Drawing.Color.FromArgb(255,56,67,33);
 
+
+
+    private String jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
     [Category("General")]
-    [DisplayName("ListTEST2222")]
-    [Description( "!!!!!!!!!!!!!!!!\n" )]
-    public List<System.Drawing.Color> labelColor333{ get; set; } = new List<System.Drawing.Color>(){
-            System.Drawing.Color.FromArgb(255,56,67,33),
-            System.Drawing.Color.FromArgb(255,0,67,33),
-            System.Drawing.Color.FromArgb(255,56,0,33),
-            System.Drawing.Color.FromArgb(255,56,67,0)
-    };
-*/
+    [DisplayName("Fetch 'first motion' jump label colors from")]
+    [Description("Live preview available!\nJust iinvoke PeasyMotion and goto Tools->Options and adjust style with live preview.\n" +
+                 "When is not equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME + " one can sync label color style to other classification items from Tools->Options->Fonts And Colors->Text Editor.\n" +
+                 "When equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME + " one can configure classification style manually trough Tools->Options->PeasyMotion or\nTools->Options->Fonts And Colors->Text Editor->'PeasyMotion First Motion Jump label color'.")]
+    [DefaultValue(JumpLabelFirstMotionFormatDef.FMT_NAME)] // by default we stick with peasy motion colors
+    [TypeConverter(typeof(TextEditorClassificationStringConverter))]
+    public String JumplabelFirstMotionColorSource { 
+        get { return jumplabelFirstMotionColorSource; } 
+        set { 
+            if (TextEditorFontsAndColorsItemsList.ColorableItemsCached.Contains(value)) {
+                jumplabelFirstMotionColorSource = value; 
+            } else {
+                jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
+                Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
+            }
+            VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionForegroundColor), value);
+            VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionBackgroundColor), value);
+        } 
+    }
+
+    private String jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
+    [Category("General")]
+    [DisplayName("Fetch 'Final motion' jump label colors from")]
+    [Description("Live preview available!\nJust iinvoke PeasyMotion and goto Tools->Options and adjust style with live preview.\n" +
+                 "When is not equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME + " one can sync label color style to other classification items from Tools->Options->Fonts And Colors->Text Editor.\n" +
+                 "When equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME + " one can configure classification style manually trough Tools->Options->PeasyMotion or\nTools->Options->Fonts And Colors->Text Editor->'PeasyMotion Final Motion Jump label color'.")]
+    [DefaultValue(JumpLabelFinalMotionFormatDef.FMT_NAME)] // by default we stick with peasy motion colors
+    [TypeConverter(typeof(TextEditorClassificationStringConverter))]
+    public String JumplabelFinalMotionColorSource { 
+        get { return jumplabelFinalMotionColorSource; } 
+        set { 
+            if (TextEditorFontsAndColorsItemsList.ColorableItemsCached.Contains(value)) {
+                jumplabelFinalMotionColorSource = value; 
+            } else {
+                jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
+                Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
+            }
+            VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionForegroundColor), value);
+            VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionBackgroundColor), value);
+        } 
+    }
+
+    public static System.Windows.Media.Color fromDrawingColor(System.Drawing.Color c) {
+        return System.Windows.Media.Color.FromArgb(c.A, c.R, c.G, c.B);
+    }
+    public static System.Drawing.Color toDrawingColor(System.Windows.Media.Color c) {
+        return System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
+    }
 
     private System.Drawing.Color GetColor(ColorKey colorKey) { 
         Trace.WriteLine($"GeneralOptions.GetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={colorMap[colorKey].Color}");
         return colorMap[colorKey].Color; 
     }
 
-    private void SetColor(string propertyName, ColorKey colorKey, System.Drawing.Color value) { 
-        Trace.WriteLine($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value}");
+    private void SetColor(bool sendNotification, string propertyName, ColorKey colorKey, System.Drawing.Color value) { 
+        Trace.WriteLine($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value} Notify={sendNotification}");
         colorMap[colorKey].Color = value; 
-        VsSettings.NotiifyInstancesFmtPropertyChanged(propertyName, fromDrawingColor(value));
+        if (sendNotification) {
+            VsSettings.NotiifyInstancesFmtPropertyChanged(propertyName, fromDrawingColor(value));
+        }
     }
         
-
     public void LoadColors(IServiceProvider Site)
     {
         Trace.WriteLine($"GeneralOptions.LoadColors");
@@ -217,39 +357,39 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         }
     }
 
-        public void SaveColors(IServiceProvider Site)
+    public void SaveColors(IServiceProvider Site)
+    {
+        Trace.WriteLine($"GeneralOptions.SaveColors");
+        ThreadHelper.ThrowIfNotOnUIThread();
+        if (Site == null)
         {
-            Trace.WriteLine($"GeneralOptions.SaveColors");
-            ThreadHelper.ThrowIfNotOnUIThread();
-            if (Site == null)
+            return;
+        }
+
+        try
+        {
+            var guid = Microsoft.VisualStudio.Editor.DefGuidList.guidTextEditorFontCategory;
+            var flags = __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS | __FCSTORAGEFLAGS.FCSF_PROPAGATECHANGES;
+            var vsStorage = (IVsFontAndColorStorage)(Site.GetService(typeof(SVsFontAndColorStorage)));
+            var vsStorageCache = (IVsFontAndColorCacheManager )(Site.GetService(typeof(SVsFontAndColorCacheManager)));
+
+            ErrorHandler.ThrowOnFailure(vsStorage.OpenCategory(ref guid, (uint)flags));
+            foreach (var colorInfo in colorMap.Values)
             {
-                return;
+                SaveColor(vsStorage, colorInfo.ColorKey, colorInfo.Color);
             }
+            ErrorHandler.ThrowOnFailure(vsStorage.CloseCategory());
 
-            try
-            {
-                var guid = Microsoft.VisualStudio.Editor.DefGuidList.guidTextEditorFontCategory;
-                var flags = __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS | __FCSTORAGEFLAGS.FCSF_PROPAGATECHANGES;
-                var vsStorage = (IVsFontAndColorStorage)(Site.GetService(typeof(SVsFontAndColorStorage)));
-                var vsStorageCache = (IVsFontAndColorCacheManager )(Site.GetService(typeof(SVsFontAndColorCacheManager)));
-
-                ErrorHandler.ThrowOnFailure(vsStorage.OpenCategory(ref guid, (uint)flags));
-                foreach (var colorInfo in colorMap.Values)
-                {
-                    SaveColor(vsStorage, colorInfo.ColorKey, colorInfo.Color);
-                }
-                ErrorHandler.ThrowOnFailure(vsStorage.CloseCategory());
-
-                if (vsStorageCache != null) {
-                    vsStorageCache.ClearAllCaches();
-                    vsStorageCache.RefreshCache(Microsoft.VisualStudio.Editor.DefGuidList.guidTextEditorFontCategory);
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine($"PeasyMotion exception in Options.SaveColors(): {ex.ToString()}");
+            if (vsStorageCache != null) {
+                vsStorageCache.ClearAllCaches();
+                vsStorageCache.RefreshCache(Microsoft.VisualStudio.Editor.DefGuidList.guidTextEditorFontCategory);
             }
         }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"PeasyMotion exception in Options.SaveColors(): {ex.ToString()}");
+        }
+    }
 
     private static System.Drawing.Color LoadColor(IServiceProvider Site, IVsFontAndColorStorage vsStorage, ColorKey colorKey)
     {
@@ -344,12 +484,6 @@ internal class DialogPageProvider
             (base._model as GeneralOptions).SaveColors(this.Site);
         }
     }
-}
-
-public enum JumpLabelAssignmentAlgorithm
-{
-    CaretRelative,
-    ViewportRelative
 }
 
 }
