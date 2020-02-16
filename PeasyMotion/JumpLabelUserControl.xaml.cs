@@ -12,6 +12,16 @@ namespace PeasyMotion
         public struct CachedSetupParams {
             public double fontRenderingEmSize;
             public System.Windows.Media.Typeface typeface;
+            public SolidColorBrush labelBg;
+            public SolidColorBrush labelFg;
+            public SolidColorBrush labelFinalMotionBg;
+            public SolidColorBrush labelFinalMotionFg;
+            public void Freeze() {
+                labelFg.Freeze();
+                labelBg.Freeze();
+                labelFinalMotionBg.Freeze();
+                labelFinalMotionFg.Freeze();                    
+            }
         };
 
         private static string GetTrimmedLabel(string label) // trim max to two characters
@@ -29,8 +39,8 @@ namespace PeasyMotion
         {
             var str = GetTrimmedLabel(label); 
             this.Content = str;
-            this.Background = Brushes.GreenYellow;
-            this.Foreground = Brushes.Sienna;
+            this.Background = cachedParams.labelBg;
+            this.Foreground = cachedParams.labelFg;
    
             this.FontSize = cachedParams.fontRenderingEmSize;
             this.FontFamily = cachedParams.typeface.FontFamily;
@@ -41,15 +51,15 @@ namespace PeasyMotion
             Canvas.SetTop(this, bounds.Top - this.Padding.Top);
         }
 
-        public void UpdateView(string alreadyPressedKeys)
+        public void UpdateView(string alreadyPressedKeys, JumpLabelUserControl.CachedSetupParams cachedParams)
         {
             _ = alreadyPressedKeys ?? throw new ArgumentNullException(nameof(alreadyPressedKeys), "cannot be null");
 
             var str = GetTrimmedLabel(alreadyPressedKeys);
             this.Content = str;
             if (str.Length == 1) {
-                this.Background = Brushes.LightGray;
-                this.Foreground = Brushes.Red;
+                this.Background = cachedParams.labelFinalMotionBg;
+                this.Foreground = cachedParams.labelFinalMotionFg;
             }
         }
 

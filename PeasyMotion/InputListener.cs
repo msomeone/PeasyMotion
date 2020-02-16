@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.ProjectSystem;
+//using Microsoft.VisualStudio.ProjectSystem;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
