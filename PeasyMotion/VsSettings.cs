@@ -120,7 +120,7 @@ namespace PeasyMotion
                 bool notify = JumpLabelFirstMotionForegroundColor == null || value == null || value.Color != JumpLabelFirstMotionForegroundColor.Color;
                 jumpLabelFirstMotionColorFg = value; 
                 jumpLabelFirstMotionColorFg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set FG={JumpLabelFirstMotionForegroundColor.Color} notify={notify}");
+                Trace.Debug($"VsSettings.Property Set FG={JumpLabelFirstMotionForegroundColor.Color} notify={notify}");
                 if (notify) OnPropertyChanged(nameof(JumpLabelFirstMotionForegroundColor)); 
             }
         }
@@ -132,7 +132,7 @@ namespace PeasyMotion
                 bool notify = JumpLabelFirstMotionBackgroundColor == null || value == null || value.Color != JumpLabelFirstMotionBackgroundColor.Color;
                 jumpLabelFirstMotionColorBg = value;
                 jumpLabelFirstMotionColorBg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set BG={JumpLabelFirstMotionBackgroundColor.Color} notify={notify}");
+                Trace.Debug($"VsSettings.Property Set BG={JumpLabelFirstMotionBackgroundColor.Color} notify={notify}");
                 if (notify) OnPropertyChanged(nameof(JumpLabelFirstMotionBackgroundColor)); 
             }
         }
@@ -145,7 +145,7 @@ namespace PeasyMotion
                 bool notify = JumpLabelFinalMotionForegroundColor == null || value == null || value.Color != JumpLabelFinalMotionForegroundColor.Color;
                 jumpLabelFinalMotionColorFg = value; 
                 jumpLabelFinalMotionColorFg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set FG={JumpLabelFinalMotionForegroundColor.Color} notify={notify}");
+                Trace.Debug($"VsSettings.Property Set FG={JumpLabelFinalMotionForegroundColor.Color} notify={notify}");
                 if (notify) OnPropertyChanged(nameof(JumpLabelFinalMotionForegroundColor)); 
             }
         }
@@ -157,7 +157,7 @@ namespace PeasyMotion
                 bool notify = JumpLabelFinalMotionBackgroundColor == null || value == null || value.Color != JumpLabelFinalMotionBackgroundColor.Color;
                 jumpLabelFinalMotionColorBg = value;
                 jumpLabelFinalMotionColorBg.Freeze();
-                Trace.WriteLine($"VsSettings.Property Set BG={JumpLabelFinalMotionBackgroundColor.Color} notify={notify}");
+                Trace.Debug($"VsSettings.Property Set BG={JumpLabelFinalMotionBackgroundColor.Color} notify={notify}");
                 if (notify) OnPropertyChanged(nameof(JumpLabelFinalMotionBackgroundColor)); 
             }
         }
@@ -182,7 +182,7 @@ namespace PeasyMotion
 
         public static void NotiifyInstancesFmtPropertyChanged(string propertyName, System.Windows.Media.Color value) 
         {
-            Trace.WriteLine($"GeneralOptions.SetColor -> VsSettings.NotiifyInstancesFmtPropertyChanged color={value}");
+            Trace.Debug($"GeneralOptions.SetColor -> VsSettings.NotiifyInstancesFmtPropertyChanged color={value}");
             lock (Instances)
             {
                 var sb = new SolidColorBrush(value); 
@@ -195,7 +195,7 @@ namespace PeasyMotion
 
         public static void NotifyInstancesPropertyColorSourceChanged(string propertyName, string newColorSource)
         {
-            Trace.WriteLine($"GeneralOptions.SetColor -> VsSettings.NotifyJumpLabelColorSourceChanged newColorSource={newColorSource}");
+            Trace.Debug($"GeneralOptions.SetColor -> VsSettings.NotifyJumpLabelColorSourceChanged newColorSource={newColorSource}");
             lock (Instances)
             {
                 foreach (var i in Instances) { 
@@ -250,10 +250,10 @@ namespace PeasyMotion
             //ighContrastSelectionBg = GetBrush(editorFormatMap, "Selected Text in High Contrast", BrushType.Background, textView);
             FetchColor(nameof(JumpLabelFirstMotionForegroundColor), GeneralOptions.Instance.JumplabelFirstMotionColorSource);
             FetchColor(nameof(JumpLabelFirstMotionBackgroundColor), GeneralOptions.Instance.JumplabelFirstMotionColorSource);
-            Trace.WriteLine($"JUMP LABEL FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor.Color}");
+            Trace.Debug($"JUMP LABEL FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor.Color}");
             FetchColor(nameof(JumpLabelFinalMotionForegroundColor), GeneralOptions.Instance.JumplabelFinalMotionColorSource);
             FetchColor(nameof(JumpLabelFinalMotionBackgroundColor), GeneralOptions.Instance.JumplabelFinalMotionColorSource);
-            Trace.WriteLine($"JUMP LABEL FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor.Color}");
+            Trace.Debug($"JUMP LABEL FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor.Color}");
         }
 
         private void FetchColor(string colorPropertyName, string sourceName)
@@ -268,7 +268,7 @@ namespace PeasyMotion
                 Debug.Fail(msg);
                 throw new Exception(msg);
             }
-            Trace.WriteLine($"VsSettings.FetchColor settings COLOR={colorPropertyName} BRUSH_TYPE={brushType}, Source={sourceName}");
+            Trace.Debug($"VsSettings.FetchColor settings COLOR={colorPropertyName} BRUSH_TYPE={brushType}, Source={sourceName}");
             this[colorPropertyName] = GetBrush(editorFormatMap, sourceName, brushType, textView);
         }
 
@@ -277,16 +277,16 @@ namespace PeasyMotion
             if (args.ChangedItems.Any(i => i == JumpLabelFirstMotionFormatDef.FMT_NAME))
             {
                 ReloadColors();
-                Trace.WriteLine("VsSettings.OnFormatItemsChanged, FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor}");
-                Trace.WriteLine("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
+                Trace.Debug("VsSettings.OnFormatItemsChanged, FG={JumpLabelFirstMotionForegroundColor.Color} BG={JumpLabelFirstMotionBackgroundColor}");
+                Trace.Debug("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
                 GeneralOptions.Instance.JumpLabelFirstMotionForegroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFirstMotionForegroundColor.Color);
                 GeneralOptions.Instance.JumpLabelFirstMotionBackgroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFirstMotionBackgroundColor.Color);
             }
             else if (args.ChangedItems.Any(i => i == JumpLabelFinalMotionFormatDef.FMT_NAME))
             {
                 ReloadColors();
-                Trace.WriteLine("VsSettings.OnFormatItemsChanged, FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor}");
-                Trace.WriteLine("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
+                Trace.Debug("VsSettings.OnFormatItemsChanged, FG={JumpLabelFinalMotionForegroundColor.Color} BG={JumpLabelFinalMotionBackgroundColor}");
+                Trace.Debug("VsSettings.OnFormatItemsChanged Setting GeneralOptions FG & BG");
                 GeneralOptions.Instance.JumpLabelFinalMotionForegroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFinalMotionForegroundColor.Color);
                 GeneralOptions.Instance.JumpLabelFinalMotionBackgroundColor = GeneralOptions.toDrawingColor(this.JumpLabelFinalMotionBackgroundColor.Color);
             }
@@ -415,8 +415,8 @@ namespace PeasyMotion
             //var qualifiedName = $"{assemblyName}, Version={version}, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL";
             var qualifiedName = $"{assemblyName}, Version={version}, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a";
             //var A = Assembly.GetExecutingAssembly().GetReferencedAssemblies();
-            //foreach(var f in A) { Trace.WriteLine(f); }
-            //foreach(var f in Assembly.GetExecutingAssembly().GetFiles()) { Trace.WriteLine(f.Name); }
+            //foreach(var f in A) { Trace.Debug(f); }
+            //foreach(var f in Assembly.GetExecutingAssembly().GetFiles()) { Trace.Debug(f.Name); }
             return Assembly.Load(qualifiedName);
         }
     }

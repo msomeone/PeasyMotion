@@ -1,4 +1,4 @@
-    #define MEASUREEXECTIME
+//#define MEASUREEXECTIME
 
 // Options based on VSSDK Options code + some stackoverflow recipes and few classes from VsVim :}
 // original ColorKey, ColorInfo, LoadColor*, SaveColor from VsVim/Src/VsVimShared/Implementation/OptionPages/DefaultOptionPage.cs
@@ -83,12 +83,12 @@ public class TextEditorFontsAndColorsItemsList
             //colors = (EnvDTE.ColorableItems)fac.Item("Selected Text");
             //HighlightFontBold = colors.Bold; //HighlightForeColor = ColorTranslator.FromOle((int)colors.Foreground); //HighlightBackColor = ColorTranslator.FromOle((int)colors.Background);
         } catch (Exception ex) {
-            Trace.WriteLine("Error loading text editor font and colors");
-            Trace.WriteLine(ex.ToString());
+            Trace.Debug("Error loading text editor font and colors");
+            Trace.Debug(ex.ToString());
         }
         #if MEASUREEXECTIME
         watch.Stop();
-        Trace.WriteLine($"PeasyMotion TextEditorFontsAndColorsItemsList obtaining FontsAndColorsItems took {watch.ElapsedMilliseconds} ms");
+        Trace.Debug($"PeasyMotion TextEditorFontsAndColorsItemsList obtaining FontsAndColorsItems took {watch.ElapsedMilliseconds} ms");
         #endif
     }
 }
@@ -160,9 +160,9 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     {
         get { return GetColor(s_jumpLabelFirstMotionColorBg); }
         set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property set color={value}");
+            Trace.Debug($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property set color={value}");
             if (JumpLabelFirstMotionBackgroundColor != value) {
-                Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
+                Trace.Debug($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
             SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionBackgroundColor), s_jumpLabelFirstMotionColorBg, value);
         }
@@ -178,9 +178,9 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     {
         get { return GetColor(s_jumpLabelFirstMotionColorFg); }
         set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property set color={value}");
+            Trace.Debug($"GeneralOptions.JumpLabelFirstMotionForegroundColor property set color={value}");
             if (JumpLabelFirstMotionForegroundColor != value) {
-                Trace.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
+                Trace.Debug($"GeneralOptions.JumpLabelFirstMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
             SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionForegroundColor), s_jumpLabelFirstMotionColorFg, value);
         }
@@ -200,9 +200,9 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     {
         get { return GetColor(s_jumpLabelFinalMotionColorBg); }
         set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property set color={value}");
+            Trace.Debug($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property set color={value}");
             if (JumpLabelFinalMotionBackgroundColor != value) {
-                Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
+                Trace.Debug($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
             SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionBackgroundColor), s_jumpLabelFinalMotionColorBg, value);
         }
@@ -217,9 +217,9 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     {
         get { return GetColor(s_jumpLabelFinalMotionColorFg); }
         set { 
-            Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property set color={value}");
+            Trace.Debug($"GeneralOptions.JumpLabelFinalMotionForegroundColor property set color={value}");
             if (JumpLabelFinalMotionForegroundColor != value) {
-                Trace.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
+                Trace.Debug($"GeneralOptions.JumpLabelFinalMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
             SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionForegroundColor), s_jumpLabelFinalMotionColorFg, value);
         }
@@ -268,7 +268,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
                 jumplabelFirstMotionColorSource = value; 
             } else {
                 jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
-                Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
+                Trace.Debug($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
             }
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionForegroundColor), value);
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionBackgroundColor), value);
@@ -290,7 +290,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
                 jumplabelFinalMotionColorSource = value; 
             } else {
                 jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
-                Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
+                Trace.Debug($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
             }
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionForegroundColor), value);
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionBackgroundColor), value);
@@ -305,12 +305,12 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     }
 
     private System.Drawing.Color GetColor(ColorKey colorKey) { 
-        Trace.WriteLine($"GeneralOptions.GetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={colorMap[colorKey].Color}");
+        Trace.Debug($"GeneralOptions.GetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={colorMap[colorKey].Color}");
         return colorMap[colorKey].Color; 
     }
 
     private void SetColor(bool sendNotification, string propertyName, ColorKey colorKey, System.Drawing.Color value) { 
-        Trace.WriteLine($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value} Notify={sendNotification}");
+        Trace.Debug($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value} Notify={sendNotification}");
         colorMap[colorKey].Color = value; 
         if (sendNotification) {
             VsSettings.NotiifyInstancesFmtPropertyChanged(propertyName, fromDrawingColor(value));
@@ -319,7 +319,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         
     public void LoadColors(IServiceProvider Site)
     {
-        Trace.WriteLine($"GeneralOptions.LoadColors");
+        Trace.Debug($"GeneralOptions.LoadColors");
         ThreadHelper.ThrowIfNotOnUIThread();
         try
         {
@@ -332,7 +332,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"PeasyMotion exception in Options.LoadColors: {ex.ToString()}");
+            Trace.Debug($"PeasyMotion exception in Options.LoadColors: {ex.ToString()}");
         }
     }
 
@@ -349,7 +349,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"PeasyMotion exception in Options.LoadColorsCore: {ex.ToString()}");
+                Trace.Debug($"PeasyMotion exception in Options.LoadColorsCore: {ex.ToString()}");
                 colorInfo = new ColorInfo(colorKey, System.Drawing.Color.Black, isValid: false);
             }
 
@@ -359,7 +359,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 
     public void SaveColors(IServiceProvider Site)
     {
-        Trace.WriteLine($"GeneralOptions.SaveColors");
+        Trace.Debug($"GeneralOptions.SaveColors");
         ThreadHelper.ThrowIfNotOnUIThread();
         if (Site == null)
         {
@@ -387,7 +387,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         }
         catch (Exception ex)
         {
-            Trace.WriteLine($"PeasyMotion exception in Options.SaveColors(): {ex.ToString()}");
+            Trace.Debug($"PeasyMotion exception in Options.SaveColors(): {ex.ToString()}");
         }
     }
 
@@ -406,13 +406,13 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         var colorRef = colorKey.IsForeground ? arr[0].crForeground : arr[0].crBackground;
         var color = FromColorRef(Site, vsStorage, colorRef);
 
-        Trace.WriteLine($"GeneralOptions.LoadColoR keyName={colorKey.Name} color={color}");
+        Trace.Debug($"GeneralOptions.LoadColoR keyName={colorKey.Name} color={color}");
         return color;
     }
 
     private static void SaveColor(IVsFontAndColorStorage vsStorage, ColorKey colorKey, System.Drawing.Color color)
     {
-        Trace.WriteLine($"GeneralOptions.SaveColoR keyName={colorKey.Name} color={color}");
+        Trace.Debug($"GeneralOptions.SaveColoR keyName={colorKey.Name} color={color}");
         ThreadHelper.ThrowIfNotOnUIThread();
         ColorableItemInfo[] arr = new ColorableItemInfo[1];
         ErrorHandler.ThrowOnFailure(vsStorage.GetItem(colorKey.Name, arr));
@@ -470,7 +470,7 @@ internal class DialogPageProvider
     { 
         protected override void OnActivate(CancelEventArgs e)
         {
-            Trace.WriteLine($"GeneralOptions OnActivate");
+            Trace.Debug($"GeneralOptions OnActivate");
             ThreadHelper.ThrowIfNotOnUIThread();
             base.OnActivate(e);
             (base._model as GeneralOptions).LoadColors(this.Site);
@@ -478,7 +478,7 @@ internal class DialogPageProvider
 
         protected override void OnApply(PageApplyEventArgs e)
         {
-            Trace.WriteLine($"GeneralOptions OnApply");
+            Trace.Debug($"GeneralOptions OnApply");
             ThreadHelper.ThrowIfNotOnUIThread();
             base.OnApply(e);
             (base._model as GeneralOptions).SaveColors(this.Site);
