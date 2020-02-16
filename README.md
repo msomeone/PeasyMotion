@@ -21,6 +21,11 @@ Two jump label assignment algorithms are available (Tools->Options->PeasyMotion 
 In caret relative mode you can adjust 'proximity' sensitivity  via "Caret position sensitivity " option.
 When caret sensitivity  is not equal to 0, caret position is quantized into blocks of (sensitivity +1) caret positions and is treated as being located in the middle of encasing block.
 
+One can configure jump label colors, with live preview also. Color options for 'First motion' and 'Final motion' jump labels are available.
+Just invoke PeasyMotion and goto **Tools**->**Options** and adjust style with live preview.
+When 'Color source' options is not equal to **PeasyMotionJumpLabel****Motion**, one can sync label color style to other classification items from **Tools**->**Options**->**Fonts And Colors**->**Text Editor**.
+When 'Color source' is equal to PeasyMotionJumpLabel****Motion one can configure classification style manually trough **Tools**->**Options**->**PeasyMotion** or **Tools**->**Options**->**Fonts And Colors**->**Text Editor**->**'PeasyMotion **** Motion Jump label color'**.
+
 ## Compatibility with other plugins
 VsVim 
 just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
