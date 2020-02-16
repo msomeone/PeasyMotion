@@ -163,17 +163,17 @@ namespace PeasyMotion
             }
 #if false
             for (int i = 0; i < 256; i++) {
-                Trace.Debug("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
-                Trace.Debug("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i));
-                Trace.Debug("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i));
-                Trace.Debug("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i));
-                Trace.Debug("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i));
-                Trace.Debug("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
-                Trace.Debug("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i));
-                Trace.Debug("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i));
-                Trace.Debug("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i));
-                Trace.Debug("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i));
-                Trace.Debug("-----");
+                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Debug.WriteLine("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i));
+                Debug.WriteLine("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i));
+                Debug.WriteLine("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i));
+                Debug.WriteLine("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i));
+                Debug.WriteLine("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Debug.WriteLine("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i));
+                Debug.WriteLine("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i));
+                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i));
+                Debug.WriteLine("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i));
+                Debug.WriteLine("-----");
             }
 #endif
             /* // too slow
@@ -212,7 +212,7 @@ namespace PeasyMotion
 
 #if MEASUREEXECTIME
             watch1.Stop();
-            Trace.Debug($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
             var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
             if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
@@ -222,7 +222,7 @@ namespace PeasyMotion
             }
 #if MEASUREEXECTIME
             watch2.Stop();
-            Trace.Debug($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -230,12 +230,12 @@ namespace PeasyMotion
 
 #if MEASUREEXECTIME
             watch3.Stop();
-            Trace.Debug($"PeasyMotion Adornments create: {adornmentCreateStopwatch.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch.ElapsedMilliseconds} ms");
             adornmentCreateStopwatch = null;
-            Trace.Debug($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem.ElapsedMilliseconds} ms");
             createAdornmentUIElem = null;
-            Trace.Debug($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
-            Trace.Debug($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
+            Debug.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
 #endif
         }
 

@@ -247,7 +247,7 @@ namespace PeasyMotion
             }
             #if MEASUREEXECTIME
             watch3.Stop();
-            Trace.Debug($"PeasyMotion Deactivate(): {watch3.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion Deactivate(): {watch3.ElapsedMilliseconds} ms");
             #endif
 
             #if MEASUREEXECTIME
@@ -256,7 +256,7 @@ namespace PeasyMotion
             TryDisableVsVim();
             #if MEASUREEXECTIME
             watch2.Stop();
-            Trace.Debug($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
             #endif
 
             ITextStructureNavigator textStructNav = this.textStructureNavigatorSelector.GetTextStructureNavigator(wpfTextView.TextBuffer);
@@ -268,7 +268,7 @@ namespace PeasyMotion
 
             #if MEASUREEXECTIME
             watch.Stop();
-            Trace.Debug($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
             #endif
         }
         private void TryDisableVsVim()
