@@ -33,6 +33,8 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>
 "VsVim is disabled until PeasyMotion finishes, so no 'i' is needed
+" or even better:
+nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 ```
 
 ViEmu
@@ -40,6 +42,8 @@ just bind PeasyMotion command in your _viemurc file:
 ```vimscript
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i 
 "'i' is needed to enter into input mode.
+" or even better:
+nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>i 
 ```
 
 ## Bugreports, Feature requests and contributions
