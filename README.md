@@ -13,13 +13,19 @@ Download this extension from the [VS Gallery](https://marketplace.visualstudio.c
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
-Assign key combination through Tools->Options->Keyboard ( command name: Tools.InvokePeasyMotion )
-Two jump label assignment algorithms are available (Tools->Options->PeasyMotion options):
+Assign key combination through **Tools**->**Options**->**Keyboard** ( command name: **Tools.InvokePeasyMotion** )
+Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
 * Viewport relative - labels assigned from top to bottom of visible text in viewport.
 
 In caret relative mode you can adjust 'proximity' sensitivity  via "Caret position sensitivity " option.
 When caret sensitivity  is not equal to 0, caret position is quantized into blocks of (sensitivity +1) caret positions and is treated as being located in the middle of encasing block.
+
+#### **Colors** for jump labels
+One can configure jump label colors, with live preview also. Color options for 'First motion' and 'Final motion' jump labels are available.
+Just invoke PeasyMotion and goto **Tools**->**Options** and adjust style with live preview.
+When 'Color source' options is not equal to **PeasyMotionJumpLabel****Motion**, one can sync label color style to other classification items from **Tools**->**Options**->**Fonts And Colors**->**Text Editor**.
+When 'Color source' is equal to PeasyMotionJumpLabel****Motion one can configure classification style manually trough **Tools**->**Options**->**PeasyMotion** or **Tools**->**Options**->**Fonts And Colors**->**Text Editor**->**'PeasyMotion **** Motion Jump label color'**.
 
 ## Compatibility with other plugins
 VsVim 
@@ -27,6 +33,8 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>
 "VsVim is disabled until PeasyMotion finishes, so no 'i' is needed
+" or even better:
+nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 ```
 
 ViEmu
@@ -34,6 +42,8 @@ just bind PeasyMotion command in your _viemurc file:
 ```vimscript
 nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i 
 "'i' is needed to enter into input mode.
+" or even better:
+nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>i 
 ```
 
 ## Bugreports, Feature requests and contributions
