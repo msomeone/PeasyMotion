@@ -94,6 +94,9 @@ namespace PeasyMotion
         private static bool enableVsVimCmdAvailable = false;
         private CommandExecutorService cmdExec = null;
 
+        private static string VsVimEnableDisableCommand = "ViEmu.EnableDisableViEmu";
+        private static bool viEmuPluginPresent = false;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="PeasyMotionActivate"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
@@ -121,6 +124,7 @@ namespace PeasyMotion
             cmdExec = new CommandExecutorService() {};
             disableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetDisabled);
             enableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetEnabled);
+            viEmuPluginPresent = cmdExec.IsCommandAvailable(VsVimEnableDisableCommand);
             JumpLabelUserControl.WarmupCache();
         }
 
@@ -243,7 +247,7 @@ namespace PeasyMotion
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
             #endif
             if (adornmentMgr != null) {
-                Deactivate();
+                Deactivate(false);
             }
             #if MEASUREEXECTIME
             watch3.Stop();
@@ -270,6 +274,10 @@ namespace PeasyMotion
             watch.Stop();
             Debug.WriteLine($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
             #endif
+
+            if (!adornmentMgr.anyJumpsAvailable()) { // empty text? no jump labels
+                Deactivate(false);
+            }
         }
         private void TryDisableVsVim()
         {
@@ -300,35 +308,47 @@ namespace PeasyMotion
         private void InputListenerOnKeyPressed(object sender, KeyPressEventArgs keyPressEventArgs)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            Debug.WriteLine("Key pressed " + keyPressEventArgs.KeyChar);
+            try {
+                Debug.WriteLine("Key pressed " + keyPressEventArgs.KeyChar);
 
-            if (keyPressEventArgs.KeyChar != '\0')
-            {
-                if (null == accumulatedKeyChars)
+                if (keyPressEventArgs.KeyChar != '\0')
                 {
-                    accumulatedKeyChars = new string(keyPressEventArgs.KeyChar, 1);
+                    if (null == accumulatedKeyChars)
+                    {
+                        accumulatedKeyChars = new string(keyPressEventArgs.KeyChar, 1);
+                    }
+                    else
+                    {
+                        accumulatedKeyChars += keyPressEventArgs.KeyChar;
+                    }
+                    (bool finalJump, bool nextCharIsControl) = adornmentMgr.JumpTo(accumulatedKeyChars);
+                    if (finalJump)
+                    {
+                        Deactivate(finalJump && (!nextCharIsControl));
+                    }
                 }
                 else
                 {
-                    accumulatedKeyChars += keyPressEventArgs.KeyChar;
+                    Deactivate(false);
                 }
-                if (adornmentMgr.JumpTo(accumulatedKeyChars))
-                {
-                    Deactivate();
-                }
-            } 
-            else 
-            {
-                Deactivate();
+            } catch (ArgumentException ex) { // happens sometimes: "The supplied SnapshotPoint is on an incorrect snapshot."
+                Trace.Write(ex);
+                System.Diagnostics.Debug.Write(ex);
             }
         }
 
-        private void Deactivate()
+        private void Deactivate(bool correctCursorOffset)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             adornmentMgr?.Reset();
             adornmentMgr = null;
             StopListening2Keyboard();
+            //TODO: detect ViEmu presence!!!
+            if (viEmuPluginPresent) {
+                SendKeys.Send(correctCursorOffset ? "{ESC}l" : "{ESC}"); 
+                // ^- workaround: ViEmu finalize + correct -1Left offset 
+                // (move cursor 1char to right if not EOL)
+            }           
         }
         private void StopListening2Keyboard()
         {
@@ -336,8 +356,6 @@ namespace PeasyMotion
             inputListener.KeyPressed -= InputListenerOnKeyPressed;
             inputListener.RemoveFilter();
             TryEnableVsVim();
-            //TODO: detect ViEmu presence!!!
-            SendKeys.Send("{ESC}"); // <- workaround: ViEmu finalize 
         }
 
     }
