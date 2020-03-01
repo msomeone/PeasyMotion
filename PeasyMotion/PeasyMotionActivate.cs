@@ -21,6 +21,8 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Task = System.Threading.Tasks.Task;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Formatting;
 
 namespace PeasyMotion
 {
@@ -65,11 +67,6 @@ namespace PeasyMotion
     internal sealed class PeasyMotionActivate
     {
         /// <summary>
-        /// Command ID.
-        /// </summary>
-        public const int CommandId = 0x0100;
-
-        /// <summary>
         /// Command menu group (command set GUID).
         /// </summary>
         public static readonly Guid CommandSet = new Guid("921fde78-c60b-4458-af50-fbb52d4b6a63");
@@ -94,8 +91,16 @@ namespace PeasyMotion
         private static bool enableVsVimCmdAvailable = false;
         private CommandExecutorService cmdExec = null;
 
-        private static string VsVimEnableDisableCommand = "ViEmu.EnableDisableViEmu";
+        private static string ViEmuEnableDisableCommand = "ViEmu.EnableDisableViEmu";
         private static bool viEmuPluginPresent = false;
+
+        private enum JumpMode {
+            InvalidMode,
+            WordJump,
+            SelectTextJump
+        }
+
+        private JumpMode currentMode = JumpMode.InvalidMode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PeasyMotionActivate"/> class.
@@ -124,14 +129,20 @@ namespace PeasyMotion
             cmdExec = new CommandExecutorService() {};
             disableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetDisabled);
             enableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetEnabled);
-            viEmuPluginPresent = cmdExec.IsCommandAvailable(VsVimEnableDisableCommand);
+            viEmuPluginPresent = cmdExec.IsCommandAvailable(ViEmuEnableDisableCommand);
             JumpLabelUserControl.WarmupCache();
         }
 
         private void CreateMenu() {
-            var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
-            commandService.AddCommand(menuItem);
+            var wordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionActivateId);
+            var wordJumpMenuItem = new MenuCommand(this.ExecuteWordJump, wordJumpMenuCommandID);
+            commandService.AddCommand(wordJumpMenuItem);
+
+            var selectionWordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionSelectTextActivateId);
+            var selectionWordJumpMenuItem = new MenuCommand(this.ExecuteSelectTextWordJump, selectionWordJumpMenuCommandID);
+            commandService.AddCommand(selectionWordJumpMenuItem);
         }
 
         /// <summary>
@@ -220,14 +231,19 @@ namespace PeasyMotion
             Instance.Init();
         }
 
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void Execute(object sender, EventArgs e)
+        private void ExecuteWordJump(object o, EventArgs e)
+        {
+            currentMode = JumpMode.WordJump;
+            ExecuteCommonJumpCode();
+        }
+        
+        private void ExecuteSelectTextWordJump(object o, EventArgs e)
+        {
+            currentMode = JumpMode.SelectTextJump;
+            ExecuteCommonJumpCode();
+        }
+
+        private void ExecuteCommonJumpCode()
         {
             #if MEASUREEXECTIME
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -247,7 +263,7 @@ namespace PeasyMotion
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
             #endif
             if (adornmentMgr != null) {
-                Deactivate(false);
+                Deactivate();
             }
             #if MEASUREEXECTIME
             watch3.Stop();
@@ -263,6 +279,15 @@ namespace PeasyMotion
             Debug.WriteLine($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
             #endif
 
+            #if MEASUREEXECTIME
+            var watch7 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
+            TryDisableViEmu();
+            #if MEASUREEXECTIME
+            watch7.Stop();
+            Debug.WriteLine($"PeasyMotion TryDisableViEmu: {watch7.ElapsedMilliseconds} ms");
+            #endif
+
             ITextStructureNavigator textStructNav = this.textStructureNavigatorSelector.GetTextStructureNavigator(wpfTextView.TextBuffer);
 
             adornmentMgr = new PeasyMotionEdAdornment(wpfTextView, textStructNav);
@@ -276,7 +301,7 @@ namespace PeasyMotion
             #endif
 
             if (!adornmentMgr.anyJumpsAvailable()) { // empty text? no jump labels
-                Deactivate(false);
+                Deactivate();
             }
         }
         private void TryDisableVsVim()
@@ -296,6 +321,18 @@ namespace PeasyMotion
                 cmdExec.Execute(VsVimSetEnabled);
             }
         }
+
+        private void TryToggleViEmu() {
+            if (viEmuPluginPresent) {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                cmdExec.Execute(ViEmuEnableDisableCommand);
+                watch.Stop();
+                Debug.WriteLine($"PeasyMotion ViEmuEnableDisableCommand exec took: {watch.ElapsedMilliseconds} ms");
+            }
+        }
+        private void TryDisableViEmu() => TryToggleViEmu(); 
+
+        private void TryEnableViEmu() => TryToggleViEmu();
 
         private void CreateInputListener(IVsTextView view, IWpfTextView textView)
         {
@@ -321,15 +358,41 @@ namespace PeasyMotion
                     {
                         accumulatedKeyChars += keyPressEventArgs.KeyChar;
                     }
-                    (bool finalJump, bool nextCharIsControl) = adornmentMgr.JumpTo(accumulatedKeyChars);
-                    if (finalJump)
+                    JumpToResult jtr = adornmentMgr.JumpTo(accumulatedKeyChars);
+                    if (null != jtr) // this was final jump char
                     {
-                        Deactivate(finalJump && (!nextCharIsControl));
+                        var wpfTextView = adornmentMgr.view;
+                        var jumpMode = this.currentMode;
+                        var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot,jtr.jumpLabelSpan);
+                        Deactivate();
+
+                        switch(jumpMode) {
+                        case JumpMode.InvalidMode:
+                            Debug.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
+                            break;
+                        case JumpMode.WordJump:
+                            { // move caret to label
+                                wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
+                            }
+                            break;
+                        case JumpMode.SelectTextJump:
+                            { // select text, and move caret to selection end label
+                                int c = jtr.currentCursorPosition; 
+                                int s = jtr.jumpLabelSpan.Start;
+                                int e = jtr.jumpLabelSpan.End;
+                                var selectionSpan = c < s ? Span.FromBounds(c,s) : Span.FromBounds(s,c);
+                                // 1. select
+                                wpfTextView.Selection.Select(new SnapshotSpan(wpfTextView.TextSnapshot,selectionSpan), c > e);
+                                // 2. move
+                                wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
+                            }
+                            break;
+                        }
                     }
                 }
                 else
                 {
-                    Deactivate(false);
+                    Deactivate();
                 }
             } catch (ArgumentException ex) { // happens sometimes: "The supplied SnapshotPoint is on an incorrect snapshot."
                 Trace.Write(ex);
@@ -337,18 +400,13 @@ namespace PeasyMotion
             }
         }
 
-        private void Deactivate(bool correctCursorOffset)
+        private void Deactivate()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             adornmentMgr?.Reset();
             adornmentMgr = null;
             StopListening2Keyboard();
-            //TODO: detect ViEmu presence!!!
-            if (viEmuPluginPresent) {
-                SendKeys.Send(correctCursorOffset ? "{ESC}l" : "{ESC}"); 
-                // ^- workaround: ViEmu finalize + correct -1Left offset 
-                // (move cursor 1char to right if not EOL)
-            }           
+            currentMode = JumpMode.InvalidMode;
         }
         private void StopListening2Keyboard()
         {
@@ -356,6 +414,7 @@ namespace PeasyMotion
             inputListener.KeyPressed -= InputListenerOnKeyPressed;
             inputListener.RemoveFilter();
             TryEnableVsVim();
+            TryEnableViEmu();
         }
 
     }

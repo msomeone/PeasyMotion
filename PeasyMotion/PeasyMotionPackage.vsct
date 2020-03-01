@@ -59,6 +59,13 @@
           <ButtonText>Invoke PeasyMotion</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionSelectTextActivateId" priority="0x0101" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion Text Select</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -74,6 +81,7 @@
     
   <KeyBindings>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="Z"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionSelectTextActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="X"/>
   </KeyBindings>
 
   <Symbols>
@@ -84,6 +92,7 @@
     <GuidSymbol name="guidPeasyMotionPackageCmdSet" value="{921fde78-c60b-4458-af50-fbb52d4b6a63}">
       <IDSymbol name="PeasyMotionMenuGroup" value="0x1020" />
       <IDSymbol name="PeasyMotionActivateId" value="0x0100" />
+      <IDSymbol name="PeasyMotionSelectTextActivateId" value="0x0101" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{3e6d0d87-f85a-45e7-bf87-a8f3a94c781b}" >

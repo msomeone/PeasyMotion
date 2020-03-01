@@ -17,6 +17,12 @@ using Microsoft.VisualStudio.PlatformUI;
 
 namespace PeasyMotion
 { 
+    internal sealed class JumpToResult
+    {
+        public int currentCursorPosition;
+        public SnapshotSpan jumpLabelSpan; // contains Span of finally selected label 
+    };
+
     /// <summary>
     /// PeasyMotionEdAdornment places red boxes behind all the "a"s in the editor window
     /// </summary>
@@ -31,7 +37,7 @@ namespace PeasyMotion
         /// <summary>
         /// Text view where the adornment is created.
         /// </summary>
-        private readonly IWpfTextView view;
+        public IWpfTextView view;
         private VsSettings vsSettings;
         private JumpLabelUserControl.CachedSetupParams jumpLabelCachedSetupParams = new JumpLabelUserControl.CachedSetupParams();
 
@@ -40,7 +46,6 @@ namespace PeasyMotion
             public SnapshotSpan span;
             public string label;
             public JumpLabelUserControl labelAdornment;
-            public bool nextIsControl;
         };
         private struct JumpWord
         {
@@ -48,7 +53,6 @@ namespace PeasyMotion
             public Rect adornmentBounds;
             public SnapshotSpan span;
             public string text;
-            public bool nextIsControl;
         };
 
         private List<Jump> currentJumps = new List<Jump>();
@@ -115,7 +119,7 @@ namespace PeasyMotion
             var startPoint = this.view.TextViewLines.FirstVisibleLine.Start;
             var endPoint = this.view.TextViewLines.LastVisibleLine.End;
             var snapshot = startPoint.Snapshot;
-            int lastJumpPos = -1;
+            int lastJumpPos = -100;
             bool prevIsSeparator = Char.IsSeparator(prevChar);
             bool prevIsPunctuation = Char.IsPunctuation(prevChar);
             bool prevIsLetterOrDigit = Char.IsLetterOrDigit(prevChar);
@@ -135,11 +139,12 @@ namespace PeasyMotion
                 bool curIsPunctuation = Char.IsPunctuation(ch);
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
                 bool curIsControl = Char.IsControl(ch);
-                bool nextIsControl_ = Char.IsControl(nextCh) && (!curIsControl);
+                //bool nextIsControl = Char.IsControl(nextCh) && (!curIsControl);
                 if (//TODO: anything faster and simpler ? will regex be faster?
-                    (
-                    (i == 0) || // file start
-                        ((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
+                    (//TODO: still skips some words T_T
+                    (i == 0) || // viewport start
+                        //((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
+                        (!prevIsLetterOrDigit && curIsLetterOrDigit) || // word begining?
                         ((prevIsLetterOrDigit || prevIsSeparator || prevIsControl || Char.IsWhiteSpace(prevChar)) && curIsPunctuation) // { } [] etc
                         )
                     &&
@@ -156,7 +161,6 @@ namespace PeasyMotion
                             adornmentBounds = geometry.Bounds,
                             span = firstCharSpan,
                             text = null,
-                            nextIsControl = nextIsControl_
                         };
                         jumpWords.Add(jw);
                         lastJumpPos = i;
@@ -402,8 +406,7 @@ namespace PeasyMotion
 #endif
 
                     //Debug.WriteLine(jw.text + " -> |" + jumpLabel + "|");
-                    var cj = new Jump() { span = jw.span, label = jumpLabel, 
-                        labelAdornment = adornment, nextIsControl = jw.nextIsControl };
+                    var cj = new Jump() { span = jw.span, label = jumpLabel, labelAdornment = adornment };
                     currentJumps.Add(cj);
                 }
                 else
@@ -463,14 +466,15 @@ namespace PeasyMotion
             this.currentJumps.Clear();
         }
 
-        internal (bool finalJump, bool nextCharIsControlChar) JumpTo(string label)
+        internal JumpToResult JumpTo(string label) // returns null if jump motion is not finished yet
         {
             int idx = currentJumps.FindIndex(0, j => j.label == label);
             if (-1 < idx)
             {
-                var j = currentJumps[idx];
-                this.view.Caret.MoveTo(j.span.Start);
-                return (true, j.nextIsControl);
+                return new JumpToResult() {
+                    currentCursorPosition = this.view.Caret.Position.BufferPosition.Position, 
+                    jumpLabelSpan = currentJumps[idx].span
+                };
             } 
             else
             {
@@ -491,7 +495,7 @@ namespace PeasyMotion
                     j.labelAdornment.UpdateView(j.label.Substring(label.Length), this.jumpLabelCachedSetupParams);
                 }
             }
-            return (false, false);
+            return null;
         }
     }
 }

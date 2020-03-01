@@ -52,6 +52,7 @@ namespace PeasyMotion
         /// </summary>
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
+            Debug.WriteLine($"InputListener.Exec( {pguidCmdGroup} {nCmdID} {nCmdexecopt} {pvaIn} {pvaOut} )");
             ThreadHelper.ThrowIfNotOnUIThread();
             int hr = VSConstants.S_OK;
 
@@ -62,6 +63,7 @@ namespace PeasyMotion
                 9, // right arrow
                 13, // down arrow
                 103, // escape
+                32, // space
             }).Contains((int)nCmdID))
             {
                 // send '\0' so we can abort
