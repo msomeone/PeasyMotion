@@ -23,7 +23,7 @@ namespace PeasyMotion
                 "PeasyMotion: New feature has been added! Text selection via jump. Give it a try via Tools.InvokePeasyMotionTextSelect command.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
-                "https://github.com/msomeone/PeasyMotion#text-selection-jump");
+                "http://github.com/msomeone/PeasyMotion#text-selection-via-toolsinvokepeasymotiontextselect-command");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
