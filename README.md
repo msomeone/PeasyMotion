@@ -13,7 +13,7 @@ Download this extension from the [VS Gallery](https://marketplace.visualstudio.c
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
-Assign key combination through **Tools**->**Options**->**Keyboard** ( command name: **Tools.InvokePeasyMotion** )
+Assign key combination through **Tools**->**Options**->**Keyboard** ( commands name: **Tools.InvokePeasyMotion** and **Tools.InvokePeasyMotionTextSelect** )
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
 * Viewport relative - labels assigned from top to bottom of visible text in viewport.
@@ -28,24 +28,16 @@ When 'Color source' options is not equal to **PeasyMotionJumpLabel****Motion**, 
 When 'Color source' is equal to PeasyMotionJumpLabel****Motion one can configure classification style manually trough **Tools**->**Options**->**PeasyMotion** or **Tools**->**Options**->**Fonts And Colors**->**Text Editor**->**'PeasyMotion **** Motion Jump label color'**.
 
 ## Compatibility with other plugins
-VsVim 
+VsVim and ViEmu
 just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
-nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>
-"VsVim is disabled until PeasyMotion finishes, so no 'i' is needed
-" or even better:
+"No more 'i' quirks for ViEmu!!
+"VsVim and ViEmu are disabled until PeasyMotion finishes
 nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
+nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
 ```
-
-ViEmu
-just bind PeasyMotion command in your _viemurc file:
-```vimscript
-nmap ;; gS:vsc Tools.InvokePeasyMotion<CR>i 
-"'i' is needed to enter into input mode.
-" or even better:
-nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>i 
-```
-
+## Text selection via Tools.InvokePeasyMotionTextSelect command
+Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.
 Check out the [contribution guidelines](CONTRIBUTING.md)

@@ -1,4 +1,5 @@
-﻿// Based on EditorHostFactory from VsVim
+﻿//#define DEBUG_COLOR_STYLE_OPTIONS
+// Based on EditorHostFactory from VsVim
 // And VsSettings from VsTeXCommentsExtension
 
 /* VsSettings 
@@ -182,7 +183,9 @@ namespace PeasyMotion
 
         public static void NotiifyInstancesFmtPropertyChanged(string propertyName, System.Windows.Media.Color value) 
         {
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.SetColor -> VsSettings.NotiifyInstancesFmtPropertyChanged color={value}");
+#endif
             lock (Instances)
             {
                 var sb = new SolidColorBrush(value); 
@@ -195,7 +198,9 @@ namespace PeasyMotion
 
         public static void NotifyInstancesPropertyColorSourceChanged(string propertyName, string newColorSource)
         {
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.SetColor -> VsSettings.NotifyJumpLabelColorSourceChanged newColorSource={newColorSource}");
+#endif
             lock (Instances)
             {
                 foreach (var i in Instances) { 

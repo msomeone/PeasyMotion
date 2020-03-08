@@ -50,6 +50,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="InfoBarService.cs" />
     <Compile Include="InputListener.cs" />
     <Compile Include="JumpLabelClassifierProvider.cs" />
     <Compile Include="JumpLabelUserControl.xaml.cs">

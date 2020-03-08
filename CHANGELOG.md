@@ -1,3 +1,9 @@
+### 1.1.1
+- Text Selection via JumpLabel ( Tools.InvokePeasyMotionTextSelect )
+- "Whats New" notification (InfoBar) added, to notify users after auto-update
+- Improved ViEmu support (no more caret one-char offset after jump)
+- Minor cleanups
+
 ### 1.0.21
 - Fixed wrong font color for reused jump label UI controls (color was red instead of black for some labels)
 

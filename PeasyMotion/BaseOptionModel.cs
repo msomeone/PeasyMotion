@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define DEBUG_OPTION_VALUES_LOAD_SAVE
+using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,8 +17,12 @@ using Task = System.Threading.Tasks.Task;
 
 namespace PeasyMotion.Options
 {
-    [AttributeUsage(AttributeTargets.All)]
+    [AttributeUsage(AttributeTargets.Property)]
     public class DisableOptionSerialization : Attribute {}
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class HiddenOption : Attribute {}
+
     /// <summary>
     /// A base class for specifying options
     /// </summary>
@@ -88,19 +94,29 @@ namespace PeasyMotion.Options
                 return;
             }
 
-            foreach (PropertyInfo property in GetOptionProperties())
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+            Debug.WriteLine($"LoadAsync<{typeof(T).Name}>()");
+#endif
+            var propertiesToSerialize = GetOptionProperties();
+            foreach (PropertyInfo property in propertiesToSerialize)
             {
                 try
                 {
                     string serializedProp = settingsStore.GetString(CollectionName, property.Name);
                     object value = DeserializeValue(serializedProp, property.PropertyType);
                     property.SetValue(this, value);
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+                    Debug.WriteLine($"{property.Name} = {property.GetValue(this)} | value = {value}");
+#endif
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.Write(ex);
                 }
             }
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+            Debug.WriteLine($"LoadAsync<{typeof(T).Name}>() finished ===================================");
+#endif
         }
 
         /// <summary>
@@ -133,11 +149,21 @@ namespace PeasyMotion.Options
                 settingsStore.CreateCollection(CollectionName);
             }
 
-            foreach (PropertyInfo property in GetOptionProperties())
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+            Debug.WriteLine($"SaveAsync<{typeof(T).Name}>()");
+#endif
+            var propertiesToSerialize = GetOptionProperties();
+            foreach (PropertyInfo property in propertiesToSerialize)
             {
                 string output = SerializeValue(property.GetValue(this));
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+                Debug.WriteLine($"{property.Name} = {property.GetValue(this)}");
+#endif
                 settingsStore.SetString(CollectionName, property.Name, output);
             }
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+            Debug.WriteLine($"SaveAsync<{typeof(T).Name}>() finished =================================");
+#endif
         }
 
         /// <summary>
@@ -180,15 +206,22 @@ namespace PeasyMotion.Options
             return new ShellSettingsManager(svc);
         }
 
-        private bool IsSerializationDisabled(System.Type t) {
-            return t.Name == nameof(DisableOptionSerialization);
+        private bool HasAttribute<ATTR_T>(PropertyInfo t) where ATTR_T : class {
+            return t.GetCustomAttributes(typeof(ATTR_T), true).Length > 0;
         }
 
         private IEnumerable<PropertyInfo> GetOptionProperties()
         {
-            return GetType()
-                .GetProperties()
-                .Where(p => (!IsSerializationDisabled(p.PropertyType)) && p.PropertyType.IsSerializable && p.PropertyType.IsPublic);
+            var a =
+                GetType().GetProperties()
+                .Where(p =>
+                (!HasAttribute<DisableOptionSerialization>(p)) && p.PropertyType.IsSerializable);
+            var b =
+                GetType().GetProperties(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                .Where(p =>
+                (!HasAttribute<DisableOptionSerialization>(p)) &&
+                    p.PropertyType.IsSerializable && HasAttribute<HiddenOption>(p));
+            return a.Concat(b);
         }
     }
 }

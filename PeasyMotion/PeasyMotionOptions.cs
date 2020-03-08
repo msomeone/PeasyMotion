@@ -1,4 +1,5 @@
 //#define MEASUREEXECTIME
+//#define DEBUG_COLOR_STYLE_OPTIONS
 
 // Options based on VSSDK Options code + some stackoverflow recipes and few classes from VsVim :}
 // original ColorKey, ColorInfo, LoadColor*, SaveColor from VsVim/Src/VsVimShared/Implementation/OptionPages/DefaultOptionPage.cs
@@ -126,6 +127,9 @@ sealed class ColorInfo
 
 internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 {
+    internal const string _PkgVersion = "1.1.1";
+    public static string getCurrentVersion() { return _PkgVersion; }
+
     private static readonly ColorKey s_jumpLabelFirstMotionColorBg = ColorKey.Background(JumpLabelFirstMotionFormatDef.FMT_NAME);
     private static readonly ColorKey s_jumpLabelFirstMotionColorFg = ColorKey.Foreground(JumpLabelFirstMotionFormatDef.FMT_NAME);
     private static readonly ColorKey s_jumpLabelFinalMotionColorBg = ColorKey.Background(JumpLabelFinalMotionFormatDef.FMT_NAME);
@@ -152,18 +156,26 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         return JumplabelFirstMotionColorSource == JumpLabelFirstMotionFormatDef.FMT_NAME;
     }
 
+    [HiddenOption()]
+    protected string installedVersion{ get; set; } = "0.0.0";
+
+    public void setInstalledVersionToCurrentPkgVersion() { installedVersion = _PkgVersion; }
+    public string getInstalledVersionStr() { return installedVersion; }
+
     [Category("General")]
     [DisplayName("First motion jump label background color")]
-    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [DisableOptionSerialization()]// no need to serialize this property, as it is stored in Fonts & Colors
     [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'first motion' jump label colors from' is equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME)]
     public System.Drawing.Color JumpLabelFirstMotionBackgroundColor
     {
         get { return GetColor(s_jumpLabelFirstMotionColorBg); }
         set { 
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property set color={value}");
             if (JumpLabelFirstMotionBackgroundColor != value) {
                 Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
+#endif
             SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionBackgroundColor), s_jumpLabelFirstMotionColorBg, value);
         }
     }
@@ -172,16 +184,18 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 
     [Category("General")]
     [DisplayName("First motion jump label foreground color")]
-    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [DisableOptionSerialization()]// no need to serialize this property, as it is stored in Fonts & Colors
     [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'first motion' jump label colors from' is equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME)]
     public System.Drawing.Color JumpLabelFirstMotionForegroundColor
     {
         get { return GetColor(s_jumpLabelFirstMotionColorFg); }
         set { 
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property set color={value}");
             if (JumpLabelFirstMotionForegroundColor != value) {
                 Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
+#endif
             SetColor(isJumpLabelFirstMotionColorSourceItsOwn(), nameof(JumpLabelFirstMotionForegroundColor), s_jumpLabelFirstMotionColorFg, value);
         }
     }
@@ -194,16 +208,18 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 
     [Category("General")]
     [DisplayName("Final motion jump label background color")]
-    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [DisableOptionSerialization()]// no need to serialize this property, as it is stored in Fonts & Colors
     [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'final motion' jump label colors from' is equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME)]
     public System.Drawing.Color JumpLabelFinalMotionBackgroundColor
     {
         get { return GetColor(s_jumpLabelFinalMotionColorBg); }
         set { 
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property set color={value}");
             if (JumpLabelFinalMotionBackgroundColor != value) {
                 Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
+#endif
             SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionBackgroundColor), s_jumpLabelFinalMotionColorBg, value);
         }
     }
@@ -211,16 +227,18 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 
     [Category("General")]
     [DisplayName("Final motion jump label foreground color")]
-    [DisableOptionSerialization]// no need to serialize this property, as it is stored in Fonts & Colors
+    [DisableOptionSerialization()]// no need to serialize this property, as it is stored in Fonts & Colors
     [Description("!!! ATTENTION !!! \nChanging this color makes sense only when\n 'Fetch 'Final motion' jump label colors from' is equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME)]
     public System.Drawing.Color JumpLabelFinalMotionForegroundColor
     {
         get { return GetColor(s_jumpLabelFinalMotionColorFg); }
         set { 
+#if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property set color={value}");
             if (JumpLabelFinalMotionForegroundColor != value) {
                 Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property differs by val. Calling GeneralOptions.SetColor");
             }
+#endif
             SetColor(isJumpLabelFinalMotionColorSourceItsOwn(), nameof(JumpLabelFinalMotionForegroundColor), s_jumpLabelFinalMotionColorFg, value);
         }
     }
@@ -290,7 +308,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
                 jumplabelFinalMotionColorSource = value; 
             } else {
                 jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
-                Debug.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
+                Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
             }
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionForegroundColor), value);
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionBackgroundColor), value);
@@ -305,12 +323,16 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     }
 
     private System.Drawing.Color GetColor(ColorKey colorKey) { 
+#if DEBUG_COLOR_STYLE_OPTIONS 
         Debug.WriteLine($"GeneralOptions.GetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={colorMap[colorKey].Color}");
+#endif
         return colorMap[colorKey].Color; 
     }
 
     private void SetColor(bool sendNotification, string propertyName, ColorKey colorKey, System.Drawing.Color value) { 
+#if DEBUG_COLOR_STYLE_OPTIONS 
         Debug.WriteLine($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value} Notify={sendNotification}");
+#endif
         colorMap[colorKey].Color = value; 
         if (sendNotification) {
             VsSettings.NotiifyInstancesFmtPropertyChanged(propertyName, fromDrawingColor(value));
@@ -319,7 +341,9 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         
     public void LoadColors(IServiceProvider Site)
     {
+#if DEBUG_COLOR_STYLE_OPTIONS 
         Debug.WriteLine($"GeneralOptions.LoadColors");
+#endif
         ThreadHelper.ThrowIfNotOnUIThread();
         try
         {

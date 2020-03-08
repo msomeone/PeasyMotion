@@ -23,6 +23,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Formatting;
+using Microsoft.VisualStudio.Imaging;
 
 namespace PeasyMotion
 {
@@ -82,7 +83,7 @@ namespace PeasyMotion
         private IVsEditorAdaptersFactoryService editor = null;
         private OleMenuCommandService commandService = null;
 
-        private InputListener inputListener;
+        private InputListener inputListener = null;
         private string accumulatedKeyChars = null;
 
         private const string VsVimSetDisabled = "VsVim.SetDisabled";
@@ -218,6 +219,8 @@ namespace PeasyMotion
                 ThrowAndLog(nameof(package) + ": failed to retrieve ITextStructureNavigatorSelectorService");
             }
 
+            InfoBarService.Initialize(package);
+
             Instance = new PeasyMotionActivate()
             {
                 pkg = package,
@@ -242,9 +245,29 @@ namespace PeasyMotion
             currentMode = JumpMode.SelectTextJump;
             ExecuteCommonJumpCode();
         }
+        
+        private void ShowNotificationsIfAny() 
+        {
+            var pkgVersion = System.Version.Parse(GeneralOptions.getCurrentVersion());
+            System.Version cfgPkgVersion;
+            try {
+                cfgPkgVersion = System.Version.Parse(GeneralOptions.Instance.getInstalledVersionStr());
+            } catch(Exception ex){
+                Trace.Write($"Failed to parse package version stored(if there was any) in options registry! Exception: {ex.ToString()}");
+                cfgPkgVersion = pkgVersion; //System.Version.Parse("0.0.0"); //TODO!!!! for release - change to =pkgVersion!! No notification is needed for 'whats new'
+            } 
+            Debug.WriteLine($"cfgPkgVersion = {cfgPkgVersion} | pkgVersion = {pkgVersion}");
+            if (!InfoBarService.Instance.anyInfoBarActive() && (pkgVersion > cfgPkgVersion))  {
+                InfoBarService.Instance.ShowInfoBar(new WhatsNewNotification());
+                GeneralOptions.Instance.setInstalledVersionToCurrentPkgVersion();
+                GeneralOptions.Instance.Save();
+            }
+        }
 
         private void ExecuteCommonJumpCode()
         {
+            ShowNotificationsIfAny();
+
             #if MEASUREEXECTIME
             var watch = System.Diagnostics.Stopwatch.StartNew();
             #endif
@@ -395,26 +418,29 @@ namespace PeasyMotion
                     Deactivate();
                 }
             } catch (ArgumentException ex) { // happens sometimes: "The supplied SnapshotPoint is on an incorrect snapshot."
-                Trace.Write(ex);
-                System.Diagnostics.Debug.Write(ex);
+                Trace.Write(ex.ToString());
+                System.Diagnostics.Debug.Write(ex.ToString());
             }
         }
 
-        private void Deactivate()
+        public void Deactivate()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            StopListening2Keyboard();
+            TryEnableVsVim();
+            TryEnableViEmu();
             adornmentMgr?.Reset();
             adornmentMgr = null;
-            StopListening2Keyboard();
             currentMode = JumpMode.InvalidMode;
         }
         private void StopListening2Keyboard()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            inputListener.KeyPressed -= InputListenerOnKeyPressed;
-            inputListener.RemoveFilter();
-            TryEnableVsVim();
-            TryEnableViEmu();
+            if (null != inputListener) {
+                inputListener.KeyPressed -= InputListenerOnKeyPressed;
+                inputListener.RemoveFilter();
+                inputListener = null;
+            }
         }
 
     }
