@@ -66,6 +66,20 @@
           <ButtonText>Invoke PeasyMotion Text Select</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordBeginingId" priority="0x0102" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion Line jump to word begining</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordEndingId" priority="0x0103" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion Line jump to word ending</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -82,6 +96,8 @@
   <KeyBindings>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="Z"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionSelectTextActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="X"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordBeginingId" editor="guidVSStd97" mod1="CONTROL ALT" key1="K"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordEndingId" editor="guidVSStd97" mod1="CONTROL ALT" key1="L"/>
   </KeyBindings>
 
   <Symbols>
@@ -93,6 +109,8 @@
       <IDSymbol name="PeasyMotionMenuGroup" value="0x1020" />
       <IDSymbol name="PeasyMotionActivateId" value="0x0100" />
       <IDSymbol name="PeasyMotionSelectTextActivateId" value="0x0101" />
+      <IDSymbol name="PeasyMotionLineJumpToWordBeginingId" value="0x0102" />
+      <IDSymbol name="PeasyMotionLineJumpToWordEndingId" value="0x0103" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{3e6d0d87-f85a-45e7-bf87-a8f3a94c781b}" >

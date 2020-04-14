@@ -23,6 +23,15 @@ namespace PeasyMotion
         public SnapshotSpan jumpLabelSpan; // contains Span of finally selected label 
     };
 
+    public enum JumpMode {
+        InvalidMode,
+        WordJump,
+        SelectTextJump,
+        LineJumpToWordBegining,
+        LineJumpToWordEnding
+    }
+
+
     /// <summary>
     /// PeasyMotionEdAdornment places red boxes behind all the "a"s in the editor window
     /// </summary>
@@ -60,6 +69,8 @@ namespace PeasyMotion
 
         const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
 
+        private JumpMode jumpMode = JumpMode.InvalidMode;
+
         public PeasyMotionEdAdornment() { // just for listener
         }
 
@@ -67,8 +78,10 @@ namespace PeasyMotion
         /// Initializes a new instance of the <see cref="PeasyMotionEdAdornment"/> class.
         /// </summary>
         /// <param name="view">Text view to create the adornment for</param>
-        public PeasyMotionEdAdornment(IWpfTextView view, ITextStructureNavigator textStructNav)
+        public PeasyMotionEdAdornment(IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
         {
+            jumpMode = jumpMode_;
+
             var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.jumpLabelAssignmentAlgorithm;
             var caretPositionSensivity = Math.Min(Int32.MaxValue >> 2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
 
@@ -97,16 +110,25 @@ namespace PeasyMotion
 
             int currentTextPos = this.view.TextViewLines.FirstVisibleLine.Start;
             int lastTextPos = this.view.TextViewLines.LastVisibleLine.End;
+            int currentLineStartTextPos = currentTextPos; // used for line word b/e jump mode
+            int currentLineEndTextPos = currentTextPos; // used for line word b/e jump mode
 
             var cursorSnapshotPt = this.view.Caret.Position.BufferPosition;
             int cursorIndex = 0;
-            if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
+            bool lineJumpToWordBeginOrEnd_isActive = (jumpMode == JumpMode.LineJumpToWordBegining) || (jumpMode == JumpMode.LineJumpToWordEnding);
+            if ((JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm) || lineJumpToWordBeginOrEnd_isActive)
             {
                 cursorIndex = cursorSnapshotPt.Position;
                 if ((cursorIndex < currentTextPos) || (cursorIndex > lastTextPos))
                 {
                     cursorSnapshotPt = this.view.TextSnapshot.GetLineFromPosition(currentTextPos + (lastTextPos - currentTextPos) / 2).Start;
                     cursorIndex = cursorSnapshotPt.Position;
+                }
+                // override text range for line jump mode:
+                if (lineJumpToWordBeginOrEnd_isActive) {
+                    var currentLine = this.view.TextSnapshot.GetLineFromPosition(cursorIndex);
+                    currentLineStartTextPos = currentTextPos = currentLine.Start;
+                    currentLineEndTextPos = lastTextPos = currentLine.End;
                 }
 
                 // bin caret to virtual segments accroding to sensivity option, with sensivity=0 does nothing
@@ -118,6 +140,11 @@ namespace PeasyMotion
             char prevChar = '\0';
             var startPoint = this.view.TextViewLines.FirstVisibleLine.Start;
             var endPoint = this.view.TextViewLines.LastVisibleLine.End;
+            if (lineJumpToWordBeginOrEnd_isActive) {
+                startPoint = new SnapshotPoint(startPoint.Snapshot, currentLineStartTextPos);
+                endPoint = new SnapshotPoint(endPoint.Snapshot, currentLineEndTextPos);
+            }
+
             var snapshot = startPoint.Snapshot;
             int lastJumpPos = -100;
             bool prevIsSeparator = Char.IsSeparator(prevChar);
@@ -140,16 +167,29 @@ namespace PeasyMotion
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
                 bool curIsControl = Char.IsControl(ch);
                 //bool nextIsControl = Char.IsControl(nextCh) && (!curIsControl);
-                if (//TODO: anything faster and simpler ? will regex be faster?
-                    (//TODO: still skips some words T_T
-                    (i == 0) || // viewport start
-                        //((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
+
+                bool candidateLabel = false;
+                //TODO: anything faster and simpler ? will regex be faster?
+                //TODO: still skips some words T_T
+                switch (jumpMode) {
+                case JumpMode.LineJumpToWordBegining:
+                    candidateLabel = !Char.IsWhiteSpace(ch) && Char.IsWhiteSpace(prevChar);
+                    break;
+                case JumpMode.LineJumpToWordEnding:
+                    candidateLabel = Char.IsWhiteSpace(ch) && !Char.IsWhiteSpace(prevChar);
+                    break;
+                default:
+                    candidateLabel = (
+                        (i == 0) || // viewport start
+                            //((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
                         (!prevIsLetterOrDigit && curIsLetterOrDigit) || // word begining?
                         ((prevIsLetterOrDigit || prevIsSeparator || prevIsControl || Char.IsWhiteSpace(prevChar)) && curIsPunctuation) // { } [] etc
-                        )
-                    &&
-                    ((lastJumpPos + 2) < i) // make sure there is a lil bit of space between adornments
-                    )
+                    );
+                    break;
+                }
+                candidateLabel = candidateLabel && ((lastJumpPos + 2) < i);// make sure there is a lil bit of space between adornments
+
+                if (candidateLabel)
                 {
                     SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(i, i + 1));
                     Geometry geometry = this.view.TextViewLines.GetTextMarkerGeometry(firstCharSpan);

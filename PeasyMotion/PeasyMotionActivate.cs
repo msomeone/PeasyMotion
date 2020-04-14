@@ -95,12 +95,6 @@ namespace PeasyMotion
         private static string ViEmuEnableDisableCommand = "ViEmu.EnableDisableViEmu";
         private static bool viEmuPluginPresent = false;
 
-        private enum JumpMode {
-            InvalidMode,
-            WordJump,
-            SelectTextJump
-        }
-
         private JumpMode currentMode = JumpMode.InvalidMode;
 
         /// <summary>
@@ -144,6 +138,16 @@ namespace PeasyMotion
                 PeasyMotion.PackageIds.PeasyMotionSelectTextActivateId);
             var selectionWordJumpMenuItem = new MenuCommand(this.ExecuteSelectTextWordJump, selectionWordJumpMenuCommandID);
             commandService.AddCommand(selectionWordJumpMenuItem);
+
+            var lineJumpToWordBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionLineJumpToWordBeginingId);
+            var lineJumpToWordBeginingMenuItem = new MenuCommand(this.ExecuteLineJumpToWordBegining, lineJumpToWordBeginingMenuCommandID);
+            commandService.AddCommand(lineJumpToWordBeginingMenuItem);
+
+            var lineJumpToWordEndingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionLineJumpToWordEndingId);
+            var lineJumpToWordEndingMenuItem = new MenuCommand(this.ExecuteLineJumpToWordEnding, lineJumpToWordEndingMenuCommandID);
+            commandService.AddCommand(lineJumpToWordEndingMenuItem);
         }
 
         /// <summary>
@@ -245,7 +249,19 @@ namespace PeasyMotion
             currentMode = JumpMode.SelectTextJump;
             ExecuteCommonJumpCode();
         }
-        
+
+        private void ExecuteLineJumpToWordBegining(object o, EventArgs e)
+        {
+            currentMode = JumpMode.LineJumpToWordBegining;
+            ExecuteCommonJumpCode();
+        }       
+
+        private void ExecuteLineJumpToWordEnding(object o, EventArgs e)
+        {
+            currentMode = JumpMode.LineJumpToWordEnding;
+            ExecuteCommonJumpCode();
+        }       
+
         private void ShowNotificationsIfAny() 
         {
             var pkgVersion = System.Version.Parse(GeneralOptions.getCurrentVersion());
@@ -313,7 +329,7 @@ namespace PeasyMotion
 
             ITextStructureNavigator textStructNav = this.textStructureNavigatorSelector.GetTextStructureNavigator(wpfTextView.TextBuffer);
 
-            adornmentMgr = new PeasyMotionEdAdornment(wpfTextView, textStructNav);
+            adornmentMgr = new PeasyMotionEdAdornment(wpfTextView, textStructNav, currentMode);
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
@@ -394,6 +410,8 @@ namespace PeasyMotion
                             Debug.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
                             break;
                         case JumpMode.WordJump:
+                        case JumpMode.LineJumpToWordBegining:
+                        case JumpMode.LineJumpToWordEnding:
                             { // move caret to label
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
                             }

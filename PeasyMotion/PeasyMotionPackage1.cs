@@ -29,6 +29,8 @@ namespace PeasyMotion
         public const int PeasyMotionMenuGroup = 0x1020;
         public const int PeasyMotionActivateId = 0x0100;
         public const int PeasyMotionSelectTextActivateId = 0x0101;
+        public const int PeasyMotionLineJumpToWordBeginingId = 0x0102;
+        public const int PeasyMotionLineJumpToWordEndingId = 0x0103;
         public const int bmpHighlightText = 0x0001;
     }
 }
