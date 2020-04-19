@@ -15,10 +15,10 @@ or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54
 ## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
 Assign key combination through **Tools**->**Options**->**Keyboard** 
 commands available: 
-**Tools.InvokePeasyMotion**
-**Tools.InvokePeasyMotionTextSelect**
-**Tools.InvokePeasyMotionLineJumpToWordBegining**
-**Tools.InvokePeasyMotionLineJumpToWordEnding**
+* **Tools.InvokePeasyMotion**
+* **Tools.InvokePeasyMotionTextSelect**
+* **Tools.InvokePeasyMotionLineJumpToWordBegining**
+* **Tools.InvokePeasyMotionLineJumpToWordEnding**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
