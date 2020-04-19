@@ -1,3 +1,8 @@
+### 1.3.1
+- Moved Tools->Invoke * PeasyMotion*  commands into separate Tools->PeasyMotion submenu
+- Crash from uncaught exception during VsSettings initialization has been fixed
+- Correct deactivation when wrong keys pressed
+
 ### 1.2.1
 - Jump to word begining or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
 - Jump label positioning algorithm has been improved: catches empty lines, better EOL handling, a lil bit closer to vim-easymotion behaviour

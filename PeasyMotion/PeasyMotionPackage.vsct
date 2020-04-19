@@ -36,10 +36,22 @@
          group as the part of a menu contained between two lines. The parent of a group
          must be a menu. -->
     <Groups>
-      <Group guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" priority="0x0600">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      <Group guid="guidPeasyMotionPackageCmdSet" id="TopMenuGroup" priority="0x0600">
+          <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+      <Group guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" priority="0x0600">
+          <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenu"/>
       </Group>
     </Groups>
+      
+    <Menus>
+        <Menu guid="guidPeasyMotionPackageCmdSet" id="SubMenu" type="Menu" priority="0x0100">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="TopMenuGroup"/>
+        <Strings>
+            <ButtonText>PeasyMotion</ButtonText>
+        </Strings>
+        </Menu>
+    </Menus>
 
     <!--Buttons section. -->
     <!--This section defines the elements the user can interact with, like a menu command or a button
@@ -53,28 +65,28 @@
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionActivateId" priority="0x0100" type="Button">
-        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
           <ButtonText>Invoke PeasyMotion</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionSelectTextActivateId" priority="0x0101" type="Button">
-        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
           <ButtonText>Invoke PeasyMotion Text Select</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordBeginingId" priority="0x0102" type="Button">
-        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
           <ButtonText>Invoke PeasyMotion Line Jump To Word Begining</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordEndingId" priority="0x0103" type="Button">
-        <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
           <ButtonText>Invoke PeasyMotion Line Jump To Word Ending</ButtonText>
@@ -106,7 +118,10 @@
 
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidPeasyMotionPackageCmdSet" value="{921fde78-c60b-4458-af50-fbb52d4b6a63}">
-      <IDSymbol name="PeasyMotionMenuGroup" value="0x1020" />
+      <IDSymbol name="TopMenuGroup" value="0x1020" />
+      <IDSymbol name="SubMenu" value="0x1100" />
+      <IDSymbol name="SubMenuGroup" value="0x1150" />
+    
       <IDSymbol name="PeasyMotionActivateId" value="0x0100" />
       <IDSymbol name="PeasyMotionSelectTextActivateId" value="0x0101" />
       <IDSymbol name="PeasyMotionLineJumpToWordBeginingId" value="0x0102" />

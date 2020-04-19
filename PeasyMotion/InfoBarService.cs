@@ -37,7 +37,7 @@ namespace PeasyMotion
                 "PeasyMotion: New mode has been added! In-Line word jump (begin/end). Give it a try via Tools.PeasyMotionLineJumpToWordBegining or Tools.PeasyMotionLineJumpToWordEnding command.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
-                "http://github.com/msomeone/PeasyMotion#in-line-word-begining-or-ending-command");
+                "https://github.com/msomeone/PeasyMotion#jump-to-word-begining-or-ending-in-current-line");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);

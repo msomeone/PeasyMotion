@@ -117,7 +117,9 @@ namespace PeasyMotion
                 var A = new EditorHostFactory();
                 var B = A.CreateCompositionContainer();
                 IEditorFormatMapService efms = B.GetExportedValue<IEditorFormatMapService>();
-                VsSettings.Initialize(this.pkg, efms);
+                if (!VsSettings.IsInitialized) {
+                    VsSettings.Initialize(this.pkg, efms);
+                }
             }
 
             CreateMenu();
@@ -390,7 +392,7 @@ namespace PeasyMotion
             try {
                 Debug.WriteLine("Key pressed " + keyPressEventArgs.KeyChar);
 
-                if (keyPressEventArgs.KeyChar != '\0')
+                if (keyPressEventArgs.KeyChar != '\0' && Char.IsLetter(keyPressEventArgs.KeyChar))
                 {
                     if (null == accumulatedKeyChars)
                     {
@@ -432,6 +434,8 @@ namespace PeasyMotion
                             }
                             break;
                         }
+                    } else if (adornmentMgr.NoLabelsLeft()){ // in case wrong (not used in active labels) key was pressed and we ran out of labels
+                        Deactivate();
                     }
                 }
                 else

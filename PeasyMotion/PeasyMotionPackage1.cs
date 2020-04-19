@@ -26,7 +26,9 @@ namespace PeasyMotion
     /// </summary>
     internal sealed partial class PackageIds
     {
-        public const int PeasyMotionMenuGroup = 0x1020;
+        public const int TopMenuGroup = 0x1020;
+        public const int SubMenu = 0x1100;
+        public const int SubMenuGroup = 0x1150;
         public const int PeasyMotionActivateId = 0x0100;
         public const int PeasyMotionSelectTextActivateId = 0x0101;
         public const int PeasyMotionLineJumpToWordBeginingId = 0x0102;

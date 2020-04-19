@@ -506,6 +506,8 @@ namespace PeasyMotion
             this.currentJumps.Clear();
         }
 
+        internal bool NoLabelsLeft() => (this.currentJumps.Count == 0);
+
         internal JumpToResult JumpTo(string label) // returns null if jump motion is not finished yet
         {
             int idx = currentJumps.FindIndex(0, j => j.label == label);
@@ -529,6 +531,7 @@ namespace PeasyMotion
                         return b;
                     }
                 );
+
 
                 foreach(Jump j in currentJumps)
                 {
