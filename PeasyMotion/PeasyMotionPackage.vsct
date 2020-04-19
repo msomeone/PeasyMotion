@@ -70,14 +70,14 @@
         <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
-          <ButtonText>Invoke PeasyMotion Line jump to word begining</ButtonText>
+          <ButtonText>Invoke PeasyMotion Line Jump To Word Begining</ButtonText>
         </Strings>
       </Button>
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordEndingId" priority="0x0103" type="Button">
         <Parent guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionMenuGroup" />
         <Icon guid="guidImages" id="bmpHighlightText" />
         <Strings>
-          <ButtonText>Invoke PeasyMotion Line jump to word ending</ButtonText>
+          <ButtonText>Invoke PeasyMotion Line Jump To Word Ending</ButtonText>
         </Strings>
       </Button>
     </Buttons>

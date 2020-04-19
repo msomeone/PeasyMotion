@@ -151,43 +151,44 @@ namespace PeasyMotion
             bool prevIsPunctuation = Char.IsPunctuation(prevChar);
             bool prevIsLetterOrDigit = Char.IsLetterOrDigit(prevChar);
             bool prevIsControl = Char.IsControl(prevChar);
-            var lastPosition = Math.Max(endPoint.Position-1, 0);
-            var currentPoint = new SnapshotPoint(snapshot, startPoint.Position);
-            var nextPoint = new SnapshotPoint(snapshot, Math.Min(startPoint.Position+1, lastPosition)); 
+            SnapshotPoint currentPoint = new SnapshotPoint(snapshot, startPoint.Position);
+            SnapshotPoint nextPoint = currentPoint; 
             int i = startPoint.Position;
+            int lastPosition = Math.Max(endPoint.Position-1, 0);
             if (startPoint.Position == lastPosition) {
-                i = lastPosition + 99; // just skip the loop. noob way :D 
+                i = lastPosition + 2; // just skip the loop. noob way :D 
             }
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
+                nextPoint = new SnapshotPoint(snapshot, Math.Min(i+1, lastPosition));
                 var nextCh = nextPoint.GetChar();
                 bool curIsSeparator = Char.IsSeparator(ch);
                 bool curIsPunctuation = Char.IsPunctuation(ch);
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
                 bool curIsControl = Char.IsControl(ch);
-                //bool nextIsControl = Char.IsControl(nextCh) && (!curIsControl);
+                bool nextIsControl = Char.IsControl(nextCh);
 
                 bool candidateLabel = false;
-                //TODO: anything faster and simpler ? will regex be faster?
-                //TODO: still skips some words T_T
+                //TODO: anything faster and simpler ? will regex be faster? maybe symbols 
+                // LUT with BITS (IsSep,IsPunct, etc as bits in INT record of LUT?)
                 switch (jumpMode) {
                 case JumpMode.LineJumpToWordBegining:
-                    candidateLabel = !Char.IsWhiteSpace(ch) && Char.IsWhiteSpace(prevChar);
+                    candidateLabel = curIsLetterOrDigit && !prevIsLetterOrDigit;
                     break;
                 case JumpMode.LineJumpToWordEnding:
-                    candidateLabel = Char.IsWhiteSpace(ch) && !Char.IsWhiteSpace(prevChar);
+                    {
+                        bool nextIsLetterOrDigit = Char.IsLetterOrDigit(nextCh);
+                        candidateLabel = curIsLetterOrDigit && !nextIsLetterOrDigit;
+                    }
                     break;
                 default:
-                    candidateLabel = (
-                        (i == 0) || // viewport start
-                            //((prevIsControl || prevIsPunctuation || prevIsSeparator) && curIsLetterOrDigit) || // word begining?
-                        (!prevIsLetterOrDigit && curIsLetterOrDigit) || // word begining?
-                        ((prevIsLetterOrDigit || prevIsSeparator || prevIsControl || Char.IsWhiteSpace(prevChar)) && curIsPunctuation) // { } [] etc
-                    );
+                    candidateLabel = (curIsLetterOrDigit && !prevIsLetterOrDigit) ||
+                                     (!curIsControl && nextIsControl) ||
+                                     (!prevIsLetterOrDigit && curIsControl && nextIsControl);
                     break;
                 }
-                candidateLabel = candidateLabel && ((lastJumpPos + 2) < i);// make sure there is a lil bit of space between adornments
+                candidateLabel = candidateLabel && (prevIsControl||((lastJumpPos + 2) < i));// make sure there is a lil bit of space between adornments
 
                 if (candidateLabel)
                 {
@@ -213,7 +214,6 @@ namespace PeasyMotion
                 prevIsControl = curIsControl;
 
                 currentPoint = nextPoint;
-                nextPoint = new SnapshotPoint(snapshot, Math.Min(i+2, lastPosition));
             }
 #if false
             for (int i = 0; i < 256; i++) {

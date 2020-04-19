@@ -1,3 +1,7 @@
+### 1.2.1
+- Jump to word begining or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+- Jump label positioning algorithm has been improved: catches empty lines, better EOL handling, a lil bit closer to vim-easymotion behaviour
+
 ### 1.1.1
 - Text Selection via JumpLabel ( Tools.InvokePeasyMotionTextSelect )
 - "Whats New" notification (InfoBar) added, to notify users after auto-update

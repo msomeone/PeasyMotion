@@ -13,7 +13,13 @@ Download this extension from the [VS Gallery](https://marketplace.visualstudio.c
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 ## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
-Assign key combination through **Tools**->**Options**->**Keyboard** ( commands name: **Tools.InvokePeasyMotion** and **Tools.InvokePeasyMotionTextSelect** )
+Assign key combination through **Tools**->**Options**->**Keyboard** 
+commands available: 
+**Tools.InvokePeasyMotion**
+**Tools.InvokePeasyMotionTextSelect**
+**Tools.InvokePeasyMotionLineJumpToWordBegining**
+**Tools.InvokePeasyMotionLineJumpToWordEnding**
+
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
 * Viewport relative - labels assigned from top to bottom of visible text in viewport.
@@ -33,11 +39,24 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
 "No more 'i' quirks for ViEmu!!
 "VsVim and ViEmu are disabled until PeasyMotion finishes
+
+"Whole viewport jump-to-word begining mode:
 nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
+
+"Select text from current caret position to desired jumplabel (fwd and reverse directions supported)
 nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
+
+"Jump to word begining in current line
+nmap zw gS:vsc Tools.InvokePeasyMotionLineJumpToWordBegining<CR>
+"Jump to word ending in current line
+nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
+
+## Jump to word begining or ending in current line
+Jump to word begining or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.
 Check out the [contribution guidelines](CONTRIBUTING.md)

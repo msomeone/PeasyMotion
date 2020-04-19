@@ -274,9 +274,12 @@ namespace PeasyMotion
             } 
             Debug.WriteLine($"cfgPkgVersion = {cfgPkgVersion} | pkgVersion = {pkgVersion}");
             if (!InfoBarService.Instance.anyInfoBarActive() && (pkgVersion > cfgPkgVersion))  {
-                InfoBarService.Instance.ShowInfoBar(new WhatsNewNotification());
-                GeneralOptions.Instance.setInstalledVersionToCurrentPkgVersion();
-                GeneralOptions.Instance.Save();
+                InfoBarService.Instance.ShowInfoBar(new WhatsNewNotification(), 
+                    new Action( () => { // in case info bar is closed propeprly, stop showing notification
+                        GeneralOptions.Instance.setInstalledVersionToCurrentPkgVersion();
+                        GeneralOptions.Instance.Save();
+                    })
+                );
             }
         }
 
