@@ -15,12 +15,35 @@ using System.Windows;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.PlatformUI;
 
+//using System.ComponentModel.Design;
+//using System.Globalization;
+//using System.Threading;
+//using System.Windows.Forms;
+//using EnvDTE;
+//using EnvDTE80;
+//using Microsoft.VisualStudio.Text.Classification;
+//using Microsoft.VisualStudio.ComponentModelHost;
+//using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio;
+//using Microsoft.VisualStudio.ProjectSystem;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+//using Microsoft.VisualStudio.Text.Editor;
+//using Microsoft.VisualStudio.Text.Operations;
+using Microsoft.VisualStudio.TextManager.Interop;
+//using Task = System.Threading.Tasks.Task;
+//using Microsoft.VisualStudio.Text;
+//using Microsoft.VisualStudio.Text.Formatting;
+//using Microsoft.VisualStudio.Imaging;
+using System.Runtime.InteropServices;
+
 namespace PeasyMotion
 { 
     internal sealed class JumpToResult
     {
         public int currentCursorPosition;
         public SnapshotSpan jumpLabelSpan; // contains Span of finally selected label 
+        public IVsWindowFrame windowFrame;
     };
 
     public enum JumpMode {
@@ -28,7 +51,8 @@ namespace PeasyMotion
         WordJump,
         SelectTextJump,
         LineJumpToWordBegining,
-        LineJumpToWordEnding
+        LineJumpToWordEnding,
+        VisibleDocuments
     }
 
 
@@ -37,6 +61,7 @@ namespace PeasyMotion
     /// </summary>
     internal sealed class PeasyMotionEdAdornment
     {
+        public const int S_OK = 0;
         private ITextStructureNavigator textStructureNavigator{ get; set; }
             /// <summary>
             /// The layer of the adornment.
@@ -55,6 +80,7 @@ namespace PeasyMotion
             public SnapshotSpan span;
             public string label;
             public JumpLabelUserControl labelAdornment;
+            public IVsWindowFrame windowFrame;
         };
         private struct JumpWord
         {
@@ -62,6 +88,7 @@ namespace PeasyMotion
             public Rect adornmentBounds;
             public SnapshotSpan span;
             public string text;
+            public IVsWindowFrame windowFrame;
         };
 
         private List<Jump> currentJumps = new List<Jump>();
@@ -158,6 +185,11 @@ namespace PeasyMotion
             if (startPoint.Position == lastPosition) {
                 i = lastPosition + 2; // just skip the loop. noob way :D 
             }
+            if (jumpMode == JumpMode.VisibleDocuments) {
+                i = lastPosition + 2; //TODO: DECIDE LATER IF WE GONA SPLIT  jumpWord list fill into 
+                // two functions - with adornmnents from textview and with smth else (doc tabs)
+                // for now, just skip loop after cheking jumpMode is DocTabs
+            }
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
@@ -202,6 +234,7 @@ namespace PeasyMotion
                             adornmentBounds = geometry.Bounds,
                             span = firstCharSpan,
                             text = null,
+                            windowFrame = null
                         };
                         jumpWords.Add(jw);
                         lastJumpPos = i;
@@ -269,6 +302,55 @@ namespace PeasyMotion
             Debug.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
             var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
+
+#if MEASUREEXECTIME
+            //TODO: MEASURE DOC TAB LABEL ASSIGNMENT SPEED
+#endif
+            if (jumpMode == JumpMode.VisibleDocuments) {
+                //TODO: extract FN
+                //var Site = PeasyMotionActivate.Instance.ServiceProvider;
+                var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
+                if (vsUIShell == null) return;
+                var wfs = vsUIShell.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
+                int P = 0;
+                Rect emptyRect = new Rect();
+                SnapshotSpan emptySpan = new SnapshotSpan();
+                foreach(var wf in wfs) {
+                    //TODO: DOUBLE EXEC ?!??!?!?
+                    //if (S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
+                    {
+                        if (c == null) {
+                            if (S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
+                                var sc = (string)ce;
+                                //MessageBox.Show(sc);  
+                                sc = $"[{P++}]{sc}";
+                                //wf.SetProperty((int)VsFramePropID.EditorCaption, sc);
+                                //wf.SetProperty((int)VsFramePropID.OwnerCaption, sc);
+                                //wf.SetProperty((int)VsFramePropID.OverrideCaption, sc);
+                                var jw = new JumpWord()
+                                {
+                                //TODO: MEASURE DIST FROM ACTIVE DOCUMENT
+                                    distanceToCursor = P, //Math.Abs(i - cursorIndex),
+                                    adornmentBounds = emptyRect,
+                                    span = emptySpan,
+                                    text = null,
+                                    windowFrame = wf,
+                                };
+                                jumpWords.Add(jw);
+                            }
+                        } else {
+                            //wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
+                        } 
+                    }
+                    var cw = wf.GetCodeWindow();
+                    IVsCodeWindow cwi = null;
+                    if (cw.TryGetValue(out cwi)) {
+                        //cwi.SetBaseEditorCaption(new string[]{ (P++).ToString() });
+                    }
+                }
+            }
+
+
             if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
             {
                 // sort jump words from closest to cursor to farthest
@@ -291,6 +373,23 @@ namespace PeasyMotion
             Debug.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
             Debug.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
 #endif
+
+#if MEASUREEXECTIME
+    //TODO: MEASURE TAB CAPTION CHANGE
+#endif
+            if (jumpMode == JumpMode.VisibleDocuments) {
+                foreach(var jump in currentJumps) {
+                    var wf = jump.windowFrame;
+                    //if (S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
+                    {
+                        if (c == null) {
+                            if (S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
+                                wf.SetProperty((int)VsFramePropID.OverrideCaption, "[" + jump.label + "]" + (string)ce);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         ~PeasyMotionEdAdornment()
@@ -313,25 +412,41 @@ namespace PeasyMotion
             case nameof(VsSettings.JumpLabelFirstMotionForegroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length>1) j.labelAdornment.Foreground = brush; }
+                    foreach(var j in currentJumps) { 
+                        if ((j.labelAdornment != null) && ((j.labelAdornment.Content as string).Length > 1)) {
+                            j.labelAdornment.Foreground = brush;
+                        }
+                    }
                 }
                 break;
             case nameof(VsSettings.JumpLabelFirstMotionBackgroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length>1) j.labelAdornment.Background = brush; }
+                    foreach(var j in currentJumps) {
+                        if ((j.labelAdornment != null) && ((j.labelAdornment.Content as string).Length > 1)) {
+                            j.labelAdornment.Background = brush;
+                        }
+                    }
                 }
                 break;
             case nameof(VsSettings.JumpLabelFinalMotionForegroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length==1) j.labelAdornment.Foreground = brush; }
+                    foreach(var j in currentJumps) {
+                        if ((j.labelAdornment != null) && ((j.labelAdornment.Content as string).Length == 1)) {
+                            j.labelAdornment.Foreground = brush;
+                        }
+                    }
                 }
                 break;
             case nameof(VsSettings.JumpLabelFinalMotionBackgroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { if ((j.labelAdornment.Content as string).Length==1) j.labelAdornment.Background = brush; }
+                    foreach(var j in currentJumps) {
+                        if ((j.labelAdornment != null) && ((j.labelAdornment.Content as string).Length == 1)) {
+                            j.labelAdornment.Background = brush;
+                        }
+                    }
                 }
                 break;
             }
@@ -405,48 +520,53 @@ namespace PeasyMotion
                 }
                 else if (KeyCount2 == 1)
                 {
-                    groups[keys0[keyIndex]] = new JumpNode()
-                    {
+                    groups[keys0[keyIndex]] = new JumpNode() {
                         jumpWordIndex = wordStartIndex + k,
                         childrenNodes = null
                     };
                     var jw = jumpWords[wordStartIndex + k];
                     string jumpLabel = prefix + keys0[keyIndex];
 
+                    JumpLabelUserControl adornment = null;
+                    if (jw.windowFrame == null) 
+                    {
 #if MEASUREEXECTIME
-                    if (createAdornmentUIElem == null)
-                    {
-                        createAdornmentUIElem = Stopwatch.StartNew();
-                    }
-                    else
-                    {
-                        createAdornmentUIElem.Start();
-                    }
+                        if (createAdornmentUIElem == null)
+                        {
+                            createAdornmentUIElem = Stopwatch.StartNew();
+                        }
+                        else
+                        {
+                            createAdornmentUIElem.Start();
+                        }
 #endif
-                    var adornment = JumpLabelUserControl.GetFreeUserControl();
-                    adornment.setup(jumpLabel, jw.adornmentBounds, this.jumpLabelCachedSetupParams);
-                    
+                        adornment = JumpLabelUserControl.GetFreeUserControl();
+                        adornment.setup(jumpLabel, jw.adornmentBounds, this.jumpLabelCachedSetupParams);
+
 #if MEASUREEXECTIME
-                    createAdornmentUIElem.Stop();
+                        createAdornmentUIElem.Stop();
 #endif
 
 #if MEASUREEXECTIME
-                    if (adornmentCreateStopwatch == null)
-                    {
-                        adornmentCreateStopwatch = Stopwatch.StartNew();
-                    }
-                    else
-                    {
-                        adornmentCreateStopwatch.Start();
-                    }
+                        if (adornmentCreateStopwatch == null)
+                        {
+                            adornmentCreateStopwatch = Stopwatch.StartNew();
+                        }
+                        else
+                        {
+                            adornmentCreateStopwatch.Start();
+                        }
 #endif
-                    this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, JumpLabelAdornmentRemovedCallback);
+                        this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, JumpLabelAdornmentRemovedCallback);
 #if MEASUREEXECTIME
-                    adornmentCreateStopwatch.Stop();
+                        adornmentCreateStopwatch.Stop();
 #endif
+                    }
 
                     //Debug.WriteLine(jw.text + " -> |" + jumpLabel + "|");
-                    var cj = new Jump() { span = jw.span, label = jumpLabel, labelAdornment = adornment };
+                    var cj = new Jump() { span = jw.span, label = jumpLabel, labelAdornment = adornment, 
+                        windowFrame = jw.windowFrame 
+                    };
                     currentJumps.Add(cj);
                 }
                 else
@@ -471,6 +591,7 @@ namespace PeasyMotion
             Array.Reverse( charArray );
             return new string( charArray );
         }
+        /*
         internal SnapshotSpan? GetNextWord(SnapshotPoint position)
         {
             var word = this.textStructureNavigator.GetExtentOfWord(position);
@@ -485,7 +606,7 @@ namespace PeasyMotion
             }
 
             return word.IsSignificant ? new SnapshotSpan?(word.Span) : null;
-        }
+        }*/
 
         /// <summary>
         /// Handles whenever the text displayed in the view changes by adding the adornment to any reformatted lines
@@ -515,7 +636,8 @@ namespace PeasyMotion
             {
                 return new JumpToResult() {
                     currentCursorPosition = this.view.Caret.Position.BufferPosition.Position, 
-                    jumpLabelSpan = currentJumps[idx].span
+                    jumpLabelSpan = currentJumps[idx].span,
+                    windowFrame = currentJumps[idx].windowFrame,
                 };
             } 
             else
@@ -524,8 +646,7 @@ namespace PeasyMotion
                     delegate (Jump j)
                     {
                         bool b = !j.label.StartsWith(label, StringComparison.InvariantCulture);
-                        if (b)
-                        {
+                        if (b && (null != j.labelAdornment)) {
                             this.layer.RemoveAdornment(j.labelAdornment);
                         }
                         return b;
@@ -535,7 +656,7 @@ namespace PeasyMotion
 
                 foreach(Jump j in currentJumps)
                 {
-                    j.labelAdornment.UpdateView(j.label.Substring(label.Length), this.jumpLabelCachedSetupParams);
+                    j.labelAdornment?.UpdateView(j.label.Substring(label.Length), this.jumpLabelCachedSetupParams);
                 }
             }
             return null;

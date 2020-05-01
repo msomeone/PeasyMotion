@@ -2,6 +2,7 @@
 
 using System.Drawing;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Design;
 using System.Diagnostics;
@@ -10,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
@@ -24,9 +26,386 @@ using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Formatting;
 using Microsoft.VisualStudio.Imaging;
+using System.Runtime.InteropServices;
+
+
 
 namespace PeasyMotion
 {
+    public readonly struct Result
+    {
+        private readonly bool _isSuccess;
+        private readonly int _hresult;
+
+        public bool IsSuccess
+        {
+            get { return _isSuccess; }
+        }
+
+        public bool IsError
+        {
+            get { return !_isSuccess; }
+        }
+
+        public int HResult
+        {
+            get
+            {
+                if (!IsError)
+                {
+                    throw new InvalidOperationException();
+                }
+                return _hresult;
+            }
+        }
+
+        private Result(int hresult)
+        {
+            _hresult = hresult;
+            _isSuccess = ErrorHandler.Succeeded(hresult);
+        }
+
+        public static Result Error
+        {
+            get { return new Result(VSConstants.E_FAIL); }
+        }
+
+        public static Result Success
+        {
+            get { return new Result(VSConstants.S_OK); }
+        }
+
+        public static Result<T> CreateSuccess<T>(T value)
+        {
+            return new Result<T>(value);
+        }
+
+        public static Result<T> CreateSuccessNonNull<T>(T value)
+            where T : class
+        {
+            if (value == null)
+            {
+                return Result.Error;
+            }
+
+            return new Result<T>(value);
+        }
+
+        public static Result CreateError(int value)
+        {
+            return new Result(value);
+        }
+
+        public static Result CreateError(Exception ex)
+        {
+            return CreateError(Marshal.GetHRForException(ex));
+        }
+
+        public static Result<T> CreateSuccessOrError<T>(T potentialValue, int hresult)
+        {
+            return ErrorHandler.Succeeded(hresult)
+                ? CreateSuccess(potentialValue)
+                : new Result<T>(hresult: hresult);
+        }
+    }
+
+    public readonly struct Result<T>
+    {
+        private readonly bool _isSuccess;
+        private readonly T _value;
+        private readonly int _hresult;
+
+        public bool IsSuccess
+        {
+            get { return _isSuccess; }
+        }
+
+        public bool IsError
+        {
+            get { return !_isSuccess; }
+        }
+
+        // TOOD: Get rid of this.  Make it a method that says throws
+        public T Value
+        {
+            get
+            {
+                if (!IsSuccess)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return _value;
+            }
+        }
+
+        public int HResult
+        {
+            get
+            {
+                if (IsSuccess)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                return _hresult;
+            }
+        }
+
+        public Result(T value)
+        {
+            _value = value;
+            _isSuccess = true;
+            _hresult = 0;
+        }
+
+        public Result(int hresult)
+        {
+            _hresult = hresult;
+            _isSuccess = false;
+            _value = default;
+        }
+
+        public T GetValueOrDefault(T defaultValue = default)
+        {
+            return IsSuccess ? Value : defaultValue;
+        }
+
+        public bool TryGetValue(out T value)
+        {
+            if (IsSuccess)
+            {
+                value = Value;
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        public static implicit operator Result<T>(Result result)
+        {
+            return new Result<T>(hresult: result.HResult);
+        }
+
+        public static implicit operator Result<T>(T value)
+        {
+            return new Result<T>(value);
+        }
+    }
+    public static class Extensions
+    {
+        public static Result<IVsCodeWindow> GetCodeWindow(this IVsWindowFrame vsWindowFrame)
+        {
+            var iid = typeof(IVsCodeWindow).GUID;
+            var ptr = IntPtr.Zero;
+            try
+            {
+                var hr = vsWindowFrame.QueryViewInterface(ref iid, out ptr);
+                if (ErrorHandler.Failed(hr))
+                {
+                    return Result.CreateError(hr);
+                }
+
+                return Result.CreateSuccess((IVsCodeWindow)Marshal.GetObjectForIUnknown(ptr));
+            }
+            catch (Exception e)
+            {
+                // Venus will throw when querying for the code window
+                return Result.CreateError(e);
+            }
+            finally
+            {
+                if (ptr != IntPtr.Zero)
+                {
+                    Marshal.Release(ptr);
+                }
+            }
+        }
+
+        public static Result<List<IVsWindowFrame>> GetDocumentWindowFrames(this IVsUIShell vsShell)
+        {
+            var hr = vsShell.GetDocumentWindowEnum(out IEnumWindowFrames enumFrames);
+            return ErrorHandler.Failed(hr) ? Result.CreateError(hr) : enumFrames.GetContents();
+        }
+
+        public static Result<List<IVsWindowFrame>> GetDocumentWindowFrames(this IVsUIShell4 vsShell, __WindowFrameTypeFlags flags)
+        {
+            var hr = vsShell.GetWindowEnum((uint)flags, out IEnumWindowFrames enumFrames);
+            return ErrorHandler.Failed(hr) ? Result.CreateError(hr) : enumFrames.GetContents();
+        }
+
+        public static Result<List<IVsWindowFrame>> GetContents(this IEnumWindowFrames enumFrames)
+        {
+            var list = new List<IVsWindowFrame>();
+            var array = new IVsWindowFrame[16];
+            while (true)
+            {
+                var hr = enumFrames.Next((uint)array.Length, array, out uint num);
+                if (ErrorHandler.Failed(hr))
+                {
+                    return Result.CreateError(hr);
+                }
+
+                if (0 == num)
+                {
+                    return list;
+                }
+
+                for (var i = 0; i < num; i++)
+                {
+                    list.Add(array[i]);
+                }
+            }
+        }
+    }
+
+    public sealed class PictureDispConverter
+    {
+
+        [DllImport("OleAut32.dll",
+
+            EntryPoint = "OleCreatePictureIndirect",
+
+            ExactSpelling = true,
+
+            PreserveSig = false)]
+
+        private static extern stdole.IPictureDisp
+
+            OleCreatePictureIndirect(
+
+                [MarshalAs(UnmanagedType.AsAny)] object picdesc,
+
+                ref Guid iid,
+
+                [MarshalAs(UnmanagedType.Bool)] bool fOwn);
+
+ 
+
+        static Guid iPictureDispGuid = typeof(stdole.IPictureDisp).GUID;
+
+ 
+
+        private static class PICTDESC
+
+        {
+
+            //Picture Types
+
+            public const short PICTYPE_UNINITIALIZED = -1;
+
+            public const short PICTYPE_NONE = 0;
+
+            public const short PICTYPE_BITMAP = 1;
+
+            public const short PICTYPE_METAFILE = 2;
+
+            public const short PICTYPE_ICON = 3;
+
+            public const short PICTYPE_ENHMETAFILE = 4;
+
+ 
+
+            [StructLayout(LayoutKind.Sequential)]
+
+            public class Icon
+
+            {
+
+                internal int cbSizeOfStruct =
+
+                    Marshal.SizeOf(typeof(PICTDESC.Icon));
+
+                internal int picType = PICTDESC.PICTYPE_ICON;
+
+                internal IntPtr hicon = IntPtr.Zero;
+
+                internal int unused1;
+
+                internal int unused2;
+
+ 
+
+                internal Icon(System.Drawing.Icon icon)
+
+                {
+
+                    this.hicon = icon.ToBitmap().GetHicon();
+
+                }
+
+            }
+
+ 
+
+            [StructLayout(LayoutKind.Sequential)]
+
+            public class Bitmap
+
+            {
+
+                internal int cbSizeOfStruct =
+
+                    Marshal.SizeOf(typeof(PICTDESC.Bitmap));
+
+                internal int picType = PICTDESC.PICTYPE_BITMAP;
+
+                internal IntPtr hbitmap = IntPtr.Zero;
+
+                internal IntPtr hpal = IntPtr.Zero;
+
+                internal int unused;
+
+ 
+
+                internal Bitmap(System.Drawing.Bitmap bitmap)
+
+                {
+
+                    this.hbitmap = bitmap.GetHbitmap();
+
+                }
+
+            }
+
+        }
+
+ 
+
+        public static stdole.IPictureDisp ToIPictureDisp(
+
+            System.Drawing.Icon icon)
+
+        {
+
+            PICTDESC.Icon pictIcon = new PICTDESC.Icon(icon);
+
+ 
+
+            return OleCreatePictureIndirect(
+
+                pictIcon, ref iPictureDispGuid, true);
+
+        }
+
+ 
+
+        public static stdole.IPictureDisp ToIPictureDisp(
+
+            System.Drawing.Bitmap bmp)
+
+        {
+
+            PICTDESC.Bitmap pictBmp = new PICTDESC.Bitmap(bmp);
+
+ 
+
+            return OleCreatePictureIndirect(pictBmp, ref iPictureDispGuid, true);
+
+        }
+
+    }
     public class CommandExecutorService
     {
         readonly DTE _dte;
@@ -240,9 +619,70 @@ namespace PeasyMotion
             Instance.Init();
         }
 
+        public void WindowExample(EnvDTE80.DTE2 dte)  
+        {  
+            var Site = this.pkg;
+            var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
+            if (vsUIShell == null) return;
+            var wfs = vsUIShell.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
+            int i = 0;
+            foreach(var wf in wfs) {
+                if (0 == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) {
+                    if (c == null) {
+                        if (0 == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
+                            var sc = (string)ce;
+                            //MessageBox.Show(sc);  
+                            sc = $"[{i++}]{sc}";
+                            //wf.SetProperty((int)VsFramePropID.EditorCaption, sc);
+                            //wf.SetProperty((int)VsFramePropID.OwnerCaption, sc);
+                            wf.SetProperty((int)VsFramePropID.OverrideCaption, sc);
+                        }
+                    } else {
+                        wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
+                    } 
+                }
+                var cw = wf.GetCodeWindow();
+                IVsCodeWindow cwi = null;
+                if (cw.TryGetValue(out cwi)) {
+                    //cwi.SetBaseEditorCaption(new string[]{ (i++).ToString() });
+                }
+            }
+            // Before running, create a text file named   
+           // "TextFile1.txt", include it in your solution,  
+           // and select some text.  
+                /*
+           Window win;  
+           Document doc;  
+           if (dte.Documents.Count > 0)  
+           {  
+              doc = dte.Documents.Item("TextFile1.txt");  
+              win = doc.ActiveWindow;  
+              // Show the name of the project that contains this window and document.  
+            
+              var win2 = win as Window2;
+
+                Bitmap flag = new Bitmap(16, 16);
+                Graphics flagGraphics = Graphics.FromImage(flag);
+                flagGraphics.FillRectangle(Brushes.Red, 0, 0, 16,16);
+                  win2.SetTabPicture(PictureDispConverter.ToIPictureDisp(flag));
+              //MessageBox.Show(win.Project.Name);  
+              //win.Caption = "[Q] " + win.Caption;
+                  //win.Visible = false;
+                  win.Left += 100;
+            
+           }  
+           */
+        }  
+
         private void ExecuteWordJump(object o, EventArgs e)
         {
-            currentMode = JumpMode.WordJump;
+            ThreadHelper.ThrowIfNotOnUIThread();
+            //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
+            //WindowExample(dte);
+            //return;
+
+            //currentMode = JumpMode.WordJump;
+            currentMode = JumpMode.VisibleDocuments;
             ExecuteCommonJumpCode();
         }
         
@@ -407,32 +847,38 @@ namespace PeasyMotion
                     {
                         var wpfTextView = adornmentMgr.view;
                         var jumpMode = this.currentMode;
-                        var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot,jtr.jumpLabelSpan);
                         Deactivate();
+                        if (jumpMode != JumpMode.VisibleDocuments)
+                        {
+                            var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot, jtr.jumpLabelSpan);
 
-                        switch(jumpMode) {
-                        case JumpMode.InvalidMode:
-                            Debug.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
-                            break;
-                        case JumpMode.WordJump:
-                        case JumpMode.LineJumpToWordBegining:
-                        case JumpMode.LineJumpToWordEnding:
+                            switch (jumpMode) {
+                            case JumpMode.InvalidMode:
+                                Debug.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
+                                break;
+                            case JumpMode.WordJump:
+                            case JumpMode.LineJumpToWordBegining:
+                            case JumpMode.LineJumpToWordEnding:
                             { // move caret to label
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
                             }
                             break;
-                        case JumpMode.SelectTextJump:
+                            case JumpMode.SelectTextJump:
                             { // select text, and move caret to selection end label
-                                int c = jtr.currentCursorPosition; 
+                                int c = jtr.currentCursorPosition;
                                 int s = jtr.jumpLabelSpan.Start;
                                 int e = jtr.jumpLabelSpan.End;
-                                var selectionSpan = c < s ? Span.FromBounds(c,s) : Span.FromBounds(s,c);
+                                var selectionSpan = c < s ? Span.FromBounds(c, s) : Span.FromBounds(s, c);
                                 // 1. select
-                                wpfTextView.Selection.Select(new SnapshotSpan(wpfTextView.TextSnapshot,selectionSpan), c > e);
+                                wpfTextView.Selection.Select(new SnapshotSpan(wpfTextView.TextSnapshot, selectionSpan), c > e);
                                 // 2. move
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
                             }
                             break;
+                            }
+                        }
+                        else if (jumpMode == JumpMode.VisibleDocuments) {
+                            jtr.windowFrame.Show();
                         }
                     } else if (adornmentMgr.NoLabelsLeft()){ // in case wrong (not used in active labels) key was pressed and we ran out of labels
                         Deactivate();
