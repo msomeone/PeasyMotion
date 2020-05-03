@@ -314,6 +314,8 @@ namespace PeasyMotion
                 //TODO: extract FN
 #if MEASUREEXECTIME
                 var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
+                Stopwatch getCodeWindwowsSW = null;
+                Stopwatch getPrimaryViewSW = null;
 #endif
                 //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
                 var wfs = PeasyMotionActivate.Instance.iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
@@ -324,58 +326,56 @@ namespace PeasyMotion
                 SnapshotSpan emptySpan = new SnapshotSpan();
                 Trace.WriteLine($"GetDocumentWindowFrames returned {wfs.Count} window frames");
                 int wfi = 0; // there is no easy way to determine document tab coordinates T_T
-                foreach(var wf in wfs) {
-                    //if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
-                    //wf.GetProperty((int)VsFramePropID.OverrideCaption, out var oovcap); 
-                    //wf.GetProperty((int)VsFramePropID.EditorCaption, out var oecap);
-                    //wf.GetProperty((int)VsFramePropID.OwnerCaption, out var oocap);
+                foreach(var wf in wfs) 
+                {
                     wf.GetProperty((int)VsFramePropID.Caption, out var oce);
                     string ce = (string)oce;
-                    //string ecap = (string)oecap;
-                    //string ocap = (string)oocap;
-                    //string ovcap = (string)oovcap;
-                    //var _ = wf.IsOnScreen(out int isonscreen_int);  // unreliable
-                    //var inOnScreen = isonscreen_int != 0; // unreliable
-                    //var isVisible = VSConstants.S_OK == wf.IsVisible(); // unreliable
-                    //int x = -9, y = -9, px = -9, py = -9;
-                    //wf.GetFramePos(null, out Guid _, out x, out y, out px, out py);
-                    //if (wf is IVsWindowFrame4 wf4) { wf4.GetWindowScreenRect(out x, out y, out px, out py); }
-                    //Trace.WriteLine($"WindowFrame[{wfi++}] Current={currentWindowFrame==wf} Caption={ce} OwnerCaption={ocap} "+
-                    //    $"EditorCaption={ecap} OverrideCaption={ovcap} "+
-                    //    $"IsOnScreen={inOnScreen} IsVisible={isVisible} {x} {y} {px} {py}");
-                    if (currentWindowFrame != wf)
-                    {
-                        //if (c == null) 
-                        {
-                            //if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) 
-                            {
-                                var cw = wf.GetCodeWindow().GetValueOrDefault(null);
-                                IVsTextView wptv = wf.GetCodeWindow().GetValueOrDefault(null) ? .GetPrimaryView().GetValueOrDefault(null);
-                                        
-                                var distToCurrentDocument = 
-                                    Math.Abs(wfi); //TODO: HOW TO SETUP AN INDEX?!?!?!?!?
-                                var jw = new JumpWord(
-                                    distanceToCursor : distToCurrentDocument,
-                                    adornmentBounds : emptyRect,
-                                    span : emptySpan,
-                                    text : null,
-                                    windowFrame : wf,
-                                    windowPrimaryTextView : wptv,
-                                    vanillaTabCaption : ce
-                                );
-                                jumpWords.Add(jw);
-                            }
-                        } 
+
+                    if (currentWindowFrame == wf) {
+                        continue;
                     }
-                    //var cw = wf.GetCodeWindow(); //cwi = null;
-                    //if (cw.TryGetValue(out IVsCodeWindow cwi)) { //cwi?.SetBaseEditorCaption(new string[]{ (P++).ToString() }); }
+
+                    //GetCodeWindow || GetPrimaryView are fucking slow!
+#if MEASUREEXECTIME
+                    if (getCodeWindwowsSW == null) { getCodeWindwowsSW = Stopwatch.StartNew();
+                    } else { getCodeWindwowsSW.Start(); }
+#endif
+                    IVsCodeWindow cw = null; //wf.GetCodeWindow().GetValueOrDefault(null);
+#if MEASUREEXECTIME
+                    getCodeWindwowsSW.Stop();
+                    if (getPrimaryViewSW == null) { getPrimaryViewSW = Stopwatch.StartNew();
+                    } else { getPrimaryViewSW.Start(); }
+#endif
+                    //IVsTextView wptv = cw?.GetPrimaryView().GetValueOrDefault(null);
+                    
+                    IVsTextView wptv = wf.GetPrimaryTextView();
+#if MEASUREEXECTIME
+                    getPrimaryViewSW.Stop();
+#endif
+                    // VANILLA:
+                    //IVsTextView wptv = wf.GetCodeWindow().GetValueOrDefault(null) ? .GetPrimaryView().GetValueOrDefault(null);
+
+                    var distToCurrentDocument = 
+                        Math.Abs(wfi); //TODO: HOW TO SETUP AN INDEX?!?!?!?!?
+                    var jw = new JumpWord(
+                        distanceToCursor : distToCurrentDocument,
+                        adornmentBounds : emptyRect,
+                        span : emptySpan,
+                        text : null,
+                        windowFrame : wf,
+                        windowPrimaryTextView : wptv,
+                        vanillaTabCaption : ce
+                    );
+                    jumpWords.Add(jw);
                 }
 #if MEASUREEXECTIME
                 watch2_0.Stop();
                 Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
+                Trace.WriteLine($"PeasyMotion get code window total : {getCodeWindwowsSW?.ElapsedMilliseconds} ms");
+                Trace.WriteLine($"PeasyMotion get primary views total : {getPrimaryViewSW?.ElapsedMilliseconds} ms");
 #endif
+            //TODO: HANDLE WpfTextView change / focus change!
             }
-
 
             if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
             {
@@ -415,6 +415,7 @@ namespace PeasyMotion
 #endif
 
                 UpdateViewFramesCaptions(primaryViewsToUpdate);
+                
             }
         }
 
@@ -636,22 +637,6 @@ namespace PeasyMotion
             Array.Reverse( charArray );
             return new string( charArray );
         }
-        /*
-        internal SnapshotSpan? GetNextWord(SnapshotPoint position)
-        {
-            var word = this.textStructureNavigator.GetExtentOfWord(position);
-            while (!word.IsSignificant && !word.Span.IsEmpty)
-            {
-                SnapshotSpan previousWordSpan = word.Span;
-                word = this.textStructureNavigator.GetExtentOfWord(word.Span.End);
-                if (word.Span == previousWordSpan)
-                {
-                    return null;
-                }
-            }
-
-            return word.IsSignificant ? new SnapshotSpan?(word.Span) : null;
-        }*/
 
         /// <summary>
         /// Handles whenever the text displayed in the view changes by adding the adornment to any reformatted lines

@@ -196,6 +196,10 @@ namespace PeasyMotion
 
     public static class Extensions
     {
+        // i wish we could simply do this:
+        //VsShellUtilities.GetWindowObject(wf).Caption = some caption;
+        // but its impossible. Exception is thrown  - invalid operation, bla bla.
+
         public static void SetDocumentWindowFrameCaptionWithLabel(this IVsWindowFrame wf, 
                     string vanillaTabCaption, string jumpLabel)
         {
@@ -264,6 +268,34 @@ namespace PeasyMotion
                     Marshal.Release(ptr);
                 }
             }
+        }
+
+        public static IVsTextView GetPrimaryTextView(this IVsWindowFrame windowFrame)
+        {
+            /* 
+            object docView;
+            int hresult = windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocView, out docView);
+ 
+            if (ErrorHandler.Failed(hresult)) {
+                return null;
+            }
+ 
+            IVsTextView viewAdapter = docView as IVsTextView;
+            if (viewAdapter != null) {
+                return viewAdapter;
+            }
+ 
+            IVsCodeWindow codeWindow = docView as IVsCodeWindow;
+            if (codeWindow != null) {
+                IVsTextView codeView;
+                if (ErrorHandler.Succeeded(codeWindow.GetPrimaryView(out codeView)) && codeView != null) {
+                    return codeView;
+                }
+            }
+ 
+            return null;
+            */
+            return VsShellUtilities.GetTextView(windowFrame);
         }
 
         public static Result<IVsTextView> GetPrimaryView(this IVsCodeWindow vsCodeWindow)
@@ -441,6 +473,9 @@ namespace PeasyMotion
             // warmup options
             GeneralOptions.Instance.caretPositionSensivity = GeneralOptions.Instance.caretPositionSensivity;
             // warmp up:
+#if MEASUREEXECTIME
+            var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
+#endif
             var wfs = iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
             if (wfs.Count > 0) {
                 Trace.WriteLine("GetDocumentWindowFrames warmed up");
@@ -449,6 +484,10 @@ namespace PeasyMotion
                     wf.SetProperty((int)VsFramePropID.Caption, (string)oce);
                 }
             }
+#if MEASUREEXECTIME
+                watch2_0.Stop();
+                Trace.WriteLine($"PeasyMotion Adornment warmup document tabs: {watch2_0.ElapsedMilliseconds} ms");
+#endif
         }
 
         private void CreateMenu() {
@@ -829,3 +868,19 @@ namespace PeasyMotion
 //wf.SetProperty((int)VsFramePropID.EditorCaption, null);
 //wf.SetProperty((int)VsFramePropID.OwnerCaption, newCaption);
 //wf.SetProperty((int)VsFramePropID.ShortCaption, newCaption);
+//if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
+//wf.GetProperty((int)VsFramePropID.OverrideCaption, out var oovcap); 
+//wf.GetProperty((int)VsFramePropID.EditorCaption, out var oecap);
+//wf.GetProperty((int)VsFramePropID.OwnerCaption, out var oocap);
+//string ecap = (string)oecap;
+//string ocap = (string)oocap;
+//string ovcap = (string)oovcap;
+//var _ = wf.IsOnScreen(out int isonscreen_int);  // unreliable
+//var inOnScreen = isonscreen_int != 0; // unreliable
+//var isVisible = VSConstants.S_OK == wf.IsVisible(); // unreliable
+//int x = -9, y = -9, px = -9, py = -9;
+//wf.GetFramePos(null, out Guid _, out x, out y, out px, out py);
+//if (wf is IVsWindowFrame4 wf4) { wf4.GetWindowScreenRect(out x, out y, out px, out py); }
+//Trace.WriteLine($"WindowFrame[{wfi++}] Current={currentWindowFrame==wf} Caption={ce} OwnerCaption={ocap} "+
+//    $"EditorCaption={ecap} OverrideCaption={ovcap} "+
+//    $"IsOnScreen={inOnScreen} IsVisible={isVisible} {x} {y} {px} {py}");
