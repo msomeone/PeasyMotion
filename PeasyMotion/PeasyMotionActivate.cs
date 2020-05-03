@@ -1,4 +1,4 @@
-﻿//#define MEASUREEXECTIME
+﻿#define MEASUREEXECTIME
 
 using System.Drawing;
 using System;
@@ -193,8 +193,54 @@ namespace PeasyMotion
             return new Result<T>(value);
         }
     }
+
     public static class Extensions
     {
+        public static void SetDocumentWindowFrameCaptionWithLabel(this IVsWindowFrame wf, 
+                    IVsTextView primaryView, string vanillaTabCaption, string jumpLabel)
+        {
+            //TODO: (check for length (what if vanilla caption is shorter than label & decor ???!!!)
+            var newCaption = PeasyMotionEdAdornment.getDocumentTabCaptionWithLabel(vanillaTabCaption, jumpLabel);
+            wf.SetProperty((int)VsFramePropID.OverrideCaption, newCaption);
+            primaryView.UpdateViewFrameCaption();
+            //Debug.WriteLine($"WindowFrame oldCaption={vanillaTabCaption} => newCaption={newCaption}");
+        }
+
+        public static void RemoveJumpLabelFromDocumentWindowFrameCaption(this IVsWindowFrame wf, 
+                    IVsTextView primaryView, string vanillaTabCaption)
+        {
+            wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
+            //wf.SetProperty((int)VsFramePropID.Caption, vanillaTabCaption); //TODO: checl if we really need this
+            primaryView.UpdateViewFrameCaption(); //TODO: maybe batch those calls and exec separately after updating all captions
+        }
+
+        public static Result<IVsWindowFrame> GetWindowFrame(this IVsTextView textView)
+        {
+            var textViewEx = textView as IVsTextViewEx;
+            if (textViewEx == null)
+            {
+                return Result.Error;
+            }
+
+            return textViewEx.GetWindowFrame();
+        }
+
+        public static Result<IVsWindowFrame> GetWindowFrame(this IVsTextViewEx textViewEx)
+        {
+            if (!ErrorHandler.Succeeded(textViewEx.GetWindowFrame(out object frame)))
+            {
+                return Result.Error;
+            }
+
+            var vsWindowFrame = frame as IVsWindowFrame;
+            if (vsWindowFrame == null)
+            {
+                return Result.Error;
+            }
+
+            return Result.CreateSuccess(vsWindowFrame);
+        }
+
         public static Result<IVsCodeWindow> GetCodeWindow(this IVsWindowFrame vsWindowFrame)
         {
             var iid = typeof(IVsCodeWindow).GUID;
@@ -221,6 +267,29 @@ namespace PeasyMotion
                     Marshal.Release(ptr);
                 }
             }
+        }
+
+        public static Result<IVsTextView> GetPrimaryView(this IVsCodeWindow vsCodeWindow)
+        {
+            var hr = vsCodeWindow.GetPrimaryView(out IVsTextView vsTextView);
+            if (ErrorHandler.Failed(hr))
+            {
+                return Result.CreateError(hr);
+            }
+
+            return Result.CreateSuccessNonNull(vsTextView);
+        }
+
+        public static Result<IWpfTextView> GetPrimaryTextView(this IVsCodeWindow codeWindow, IVsEditorAdaptersFactoryService factoryService)
+        {
+            var result = GetPrimaryView(codeWindow);
+            if (result.IsError)
+            {
+                return Result.CreateError(result.HResult);
+            }
+
+            var textView = factoryService.GetWpfTextViewNoThrow(result.Value);
+            return Result.CreateSuccessNonNull(textView);
         }
 
         public static Result<List<IVsWindowFrame>> GetDocumentWindowFrames(this IVsUIShell vsShell)
@@ -258,154 +327,17 @@ namespace PeasyMotion
                 }
             }
         }
+
+        public static IWpfTextView GetWpfTextViewNoThrow(this IVsEditorAdaptersFactoryService editorAdapter, IVsTextView vsTextView)
+        {
+            try {
+                return editorAdapter.GetWpfTextView(vsTextView);
+            } catch {
+                return null;
+            }
+        }
     }
 
-    public sealed class PictureDispConverter
-    {
-
-        [DllImport("OleAut32.dll",
-
-            EntryPoint = "OleCreatePictureIndirect",
-
-            ExactSpelling = true,
-
-            PreserveSig = false)]
-
-        private static extern stdole.IPictureDisp
-
-            OleCreatePictureIndirect(
-
-                [MarshalAs(UnmanagedType.AsAny)] object picdesc,
-
-                ref Guid iid,
-
-                [MarshalAs(UnmanagedType.Bool)] bool fOwn);
-
- 
-
-        static Guid iPictureDispGuid = typeof(stdole.IPictureDisp).GUID;
-
- 
-
-        private static class PICTDESC
-
-        {
-
-            //Picture Types
-
-            public const short PICTYPE_UNINITIALIZED = -1;
-
-            public const short PICTYPE_NONE = 0;
-
-            public const short PICTYPE_BITMAP = 1;
-
-            public const short PICTYPE_METAFILE = 2;
-
-            public const short PICTYPE_ICON = 3;
-
-            public const short PICTYPE_ENHMETAFILE = 4;
-
- 
-
-            [StructLayout(LayoutKind.Sequential)]
-
-            public class Icon
-
-            {
-
-                internal int cbSizeOfStruct =
-
-                    Marshal.SizeOf(typeof(PICTDESC.Icon));
-
-                internal int picType = PICTDESC.PICTYPE_ICON;
-
-                internal IntPtr hicon = IntPtr.Zero;
-
-                internal int unused1;
-
-                internal int unused2;
-
- 
-
-                internal Icon(System.Drawing.Icon icon)
-
-                {
-
-                    this.hicon = icon.ToBitmap().GetHicon();
-
-                }
-
-            }
-
- 
-
-            [StructLayout(LayoutKind.Sequential)]
-
-            public class Bitmap
-
-            {
-
-                internal int cbSizeOfStruct =
-
-                    Marshal.SizeOf(typeof(PICTDESC.Bitmap));
-
-                internal int picType = PICTDESC.PICTYPE_BITMAP;
-
-                internal IntPtr hbitmap = IntPtr.Zero;
-
-                internal IntPtr hpal = IntPtr.Zero;
-
-                internal int unused;
-
- 
-
-                internal Bitmap(System.Drawing.Bitmap bitmap)
-
-                {
-
-                    this.hbitmap = bitmap.GetHbitmap();
-
-                }
-
-            }
-
-        }
-
- 
-
-        public static stdole.IPictureDisp ToIPictureDisp(
-
-            System.Drawing.Icon icon)
-
-        {
-
-            PICTDESC.Icon pictIcon = new PICTDESC.Icon(icon);
-
- 
-
-            return OleCreatePictureIndirect(
-
-                pictIcon, ref iPictureDispGuid, true);
-
-        }
-
- 
-
-        public static stdole.IPictureDisp ToIPictureDisp(
-
-            System.Drawing.Bitmap bmp)
-
-        {
-
-            PICTDESC.Bitmap pictBmp = new PICTDESC.Bitmap(bmp);
-
- 
-
-            return OleCreatePictureIndirect(pictBmp, ref iPictureDispGuid, true);
-
-        }
-
-    }
     public class CommandExecutorService
     {
         readonly DTE _dte;
@@ -474,8 +406,6 @@ namespace PeasyMotion
         private static string ViEmuEnableDisableCommand = "ViEmu.EnableDisableViEmu";
         private static bool viEmuPluginPresent = false;
 
-        private JumpMode currentMode = JumpMode.InvalidMode;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="PeasyMotionActivate"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
@@ -529,6 +459,12 @@ namespace PeasyMotion
                 PeasyMotion.PackageIds.PeasyMotionLineJumpToWordEndingId);
             var lineJumpToWordEndingMenuItem = new MenuCommand(this.ExecuteLineJumpToWordEnding, lineJumpToWordEndingMenuCommandID);
             commandService.AddCommand(lineJumpToWordEndingMenuItem);
+
+            var jumpToDocTabMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionJumpToDocumentTab);
+            var jumpToDocTabMenuItem = new MenuCommand(this.ExecuteJumpToDocTab, jumpToDocTabMenuCommandID);
+            commandService.AddCommand(jumpToDocTabMenuItem);
+
         }
 
         /// <summary>
@@ -619,89 +555,29 @@ namespace PeasyMotion
             Instance.Init();
         }
 
-        public void WindowExample(EnvDTE80.DTE2 dte)  
-        {  
-            var Site = this.pkg;
-            var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
-            if (vsUIShell == null) return;
-            var wfs = vsUIShell.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
-            int i = 0;
-            foreach(var wf in wfs) {
-                if (0 == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) {
-                    if (c == null) {
-                        if (0 == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
-                            var sc = (string)ce;
-                            //MessageBox.Show(sc);  
-                            sc = $"[{i++}]{sc}";
-                            //wf.SetProperty((int)VsFramePropID.EditorCaption, sc);
-                            //wf.SetProperty((int)VsFramePropID.OwnerCaption, sc);
-                            wf.SetProperty((int)VsFramePropID.OverrideCaption, sc);
-                        }
-                    } else {
-                        wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
-                    } 
-                }
-                var cw = wf.GetCodeWindow();
-                IVsCodeWindow cwi = null;
-                if (cw.TryGetValue(out cwi)) {
-                    //cwi.SetBaseEditorCaption(new string[]{ (i++).ToString() });
-                }
-            }
-            // Before running, create a text file named   
-           // "TextFile1.txt", include it in your solution,  
-           // and select some text.  
-                /*
-           Window win;  
-           Document doc;  
-           if (dte.Documents.Count > 0)  
-           {  
-              doc = dte.Documents.Item("TextFile1.txt");  
-              win = doc.ActiveWindow;  
-              // Show the name of the project that contains this window and document.  
-            
-              var win2 = win as Window2;
-
-                Bitmap flag = new Bitmap(16, 16);
-                Graphics flagGraphics = Graphics.FromImage(flag);
-                flagGraphics.FillRectangle(Brushes.Red, 0, 0, 16,16);
-                  win2.SetTabPicture(PictureDispConverter.ToIPictureDisp(flag));
-              //MessageBox.Show(win.Project.Name);  
-              //win.Caption = "[Q] " + win.Caption;
-                  //win.Visible = false;
-                  win.Left += 100;
-            
-           }  
-           */
-        }  
-
         private void ExecuteWordJump(object o, EventArgs e)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
-            //WindowExample(dte);
-            //return;
-
-            //currentMode = JumpMode.WordJump;
-            currentMode = JumpMode.VisibleDocuments;
-            ExecuteCommonJumpCode();
+            ExecuteCommonJumpCode(JumpMode.WordJump);
         }
         
         private void ExecuteSelectTextWordJump(object o, EventArgs e)
         {
-            currentMode = JumpMode.SelectTextJump;
-            ExecuteCommonJumpCode();
+            ExecuteCommonJumpCode(JumpMode.SelectTextJump);
         }
 
         private void ExecuteLineJumpToWordBegining(object o, EventArgs e)
         {
-            currentMode = JumpMode.LineJumpToWordBegining;
-            ExecuteCommonJumpCode();
+            ExecuteCommonJumpCode(JumpMode.LineJumpToWordBegining);
         }       
 
         private void ExecuteLineJumpToWordEnding(object o, EventArgs e)
         {
-            currentMode = JumpMode.LineJumpToWordEnding;
-            ExecuteCommonJumpCode();
+            ExecuteCommonJumpCode(JumpMode.LineJumpToWordEnding);
+        }       
+
+        private void ExecuteJumpToDocTab(object o, EventArgs e)
+        {
+            ExecuteCommonJumpCode(JumpMode.VisibleDocuments);
         }       
 
         private void ShowNotificationsIfAny() 
@@ -725,7 +601,7 @@ namespace PeasyMotion
             }
         }
 
-        private void ExecuteCommonJumpCode()
+        private void ExecuteCommonJumpCode(JumpMode desiredJumpMode)
         {
             ShowNotificationsIfAny();
 
@@ -749,9 +625,10 @@ namespace PeasyMotion
             if (adornmentMgr != null) {
                 Deactivate();
             }
+
             #if MEASUREEXECTIME
             watch3.Stop();
-            Debug.WriteLine($"PeasyMotion Deactivate(): {watch3.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Deactivate(): {watch3.ElapsedMilliseconds} ms");
             #endif
 
             #if MEASUREEXECTIME
@@ -760,7 +637,7 @@ namespace PeasyMotion
             TryDisableVsVim();
             #if MEASUREEXECTIME
             watch2.Stop();
-            Debug.WriteLine($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
             #endif
 
             #if MEASUREEXECTIME
@@ -769,19 +646,19 @@ namespace PeasyMotion
             TryDisableViEmu();
             #if MEASUREEXECTIME
             watch7.Stop();
-            Debug.WriteLine($"PeasyMotion TryDisableViEmu: {watch7.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion TryDisableViEmu: {watch7.ElapsedMilliseconds} ms");
             #endif
 
             ITextStructureNavigator textStructNav = this.textStructureNavigatorSelector.GetTextStructureNavigator(wpfTextView.TextBuffer);
 
-            adornmentMgr = new PeasyMotionEdAdornment(wpfTextView, textStructNav, currentMode);
+            adornmentMgr = new PeasyMotionEdAdornment(vsTextView, wpfTextView, textStructNav, desiredJumpMode);
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
 
             #if MEASUREEXECTIME
             watch.Stop();
-            Debug.WriteLine($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion FullExecTime: {watch.ElapsedMilliseconds} ms");
             #endif
 
             if (!adornmentMgr.anyJumpsAvailable()) { // empty text? no jump labels
@@ -842,19 +719,19 @@ namespace PeasyMotion
                     {
                         accumulatedKeyChars += keyPressEventArgs.KeyChar;
                     }
-                    JumpToResult jtr = adornmentMgr.JumpTo(accumulatedKeyChars);
-                    if (null != jtr) // this was final jump char
+                    ;
+                    if (adornmentMgr.JumpTo(accumulatedKeyChars, out var jumpToResult)) // this was final jump char
                     {
                         var wpfTextView = adornmentMgr.view;
-                        var jumpMode = this.currentMode;
+                        var jumpMode = adornmentMgr.CurrentJumpMode;
                         Deactivate();
                         if (jumpMode != JumpMode.VisibleDocuments)
                         {
-                            var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot, jtr.jumpLabelSpan);
+                            var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot, jumpToResult.jumpLabelSpan);
 
                             switch (jumpMode) {
                             case JumpMode.InvalidMode:
-                                Debug.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
+                                Trace.WriteLine("PeasyMotion: OOOPS! JumpMode logic is broken!");
                                 break;
                             case JumpMode.WordJump:
                             case JumpMode.LineJumpToWordBegining:
@@ -865,9 +742,9 @@ namespace PeasyMotion
                             break;
                             case JumpMode.SelectTextJump:
                             { // select text, and move caret to selection end label
-                                int c = jtr.currentCursorPosition;
-                                int s = jtr.jumpLabelSpan.Start;
-                                int e = jtr.jumpLabelSpan.End;
+                                int c = jumpToResult.currentCursorPosition;
+                                int s = jumpToResult.jumpLabelSpan.Start;
+                                int e = jumpToResult.jumpLabelSpan.End;
                                 var selectionSpan = c < s ? Span.FromBounds(c, s) : Span.FromBounds(s, c);
                                 // 1. select
                                 wpfTextView.Selection.Select(new SnapshotSpan(wpfTextView.TextSnapshot, selectionSpan), c > e);
@@ -878,7 +755,7 @@ namespace PeasyMotion
                             }
                         }
                         else if (jumpMode == JumpMode.VisibleDocuments) {
-                            jtr.windowFrame.Show();
+                            jumpToResult.windowFrame.Show();
                         }
                     } else if (adornmentMgr.NoLabelsLeft()){ // in case wrong (not used in active labels) key was pressed and we ran out of labels
                         Deactivate();
@@ -902,7 +779,6 @@ namespace PeasyMotion
             TryEnableViEmu();
             adornmentMgr?.Reset();
             adornmentMgr = null;
-            currentMode = JumpMode.InvalidMode;
         }
         private void StopListening2Keyboard()
         {
@@ -916,3 +792,28 @@ namespace PeasyMotion
 
     }
 }
+
+//sanbox:
+#if false
+            for (int i = 0; i < 256; i++) {
+                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Debug.WriteLine("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i));
+                Debug.WriteLine("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i));
+                Debug.WriteLine("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i));
+                Debug.WriteLine("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i));
+                Debug.WriteLine("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
+                Debug.WriteLine("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i));
+                Debug.WriteLine("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i));
+                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i));
+                Debug.WriteLine("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i));
+                Debug.WriteLine("-----");
+            }
+#endif
+
+//how to: 
+//howtos:
+//var Site = PeasyMotionActivate.Instance.ServiceProvider;
+//var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
+//wf.SetProperty((int)VsFramePropID.EditorCaption, null);
+//wf.SetProperty((int)VsFramePropID.OwnerCaption, newCaption);
+//wf.SetProperty((int)VsFramePropID.ShortCaption, newCaption);

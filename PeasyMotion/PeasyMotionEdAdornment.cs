@@ -1,4 +1,4 @@
-﻿//#define MEASUREEXECTIME
+﻿#define MEASUREEXECTIME
 
 using System;
 using System.Windows.Controls;
@@ -39,11 +39,21 @@ using System.Runtime.InteropServices;
 
 namespace PeasyMotion
 { 
-    internal sealed class JumpToResult
+    struct JumpToResult
     {
-        public int currentCursorPosition;
-        public SnapshotSpan jumpLabelSpan; // contains Span of finally selected label 
-        public IVsWindowFrame windowFrame;
+        public JumpToResult(
+                int currentCursorPosition = -1,
+                SnapshotSpan jumpLabelSpan = new SnapshotSpan(),
+                IVsWindowFrame windowFrame = null
+            )
+        {
+            this.currentCursorPosition = currentCursorPosition;
+            this.jumpLabelSpan = jumpLabelSpan;
+            this.windowFrame = windowFrame;
+        }
+        public int currentCursorPosition {get;}
+        public SnapshotSpan jumpLabelSpan {get;} // contains Span of finally selected label 
+        public IVsWindowFrame windowFrame {get;}
     };
 
     public enum JumpMode {
@@ -61,7 +71,6 @@ namespace PeasyMotion
     /// </summary>
     internal sealed class PeasyMotionEdAdornment
     {
-        public const int S_OK = 0;
         private ITextStructureNavigator textStructureNavigator{ get; set; }
             /// <summary>
             /// The layer of the adornment.
@@ -71,24 +80,66 @@ namespace PeasyMotion
         /// <summary>
         /// Text view where the adornment is created.
         /// </summary>
+        public IVsTextView vsTextView;
         public IWpfTextView view;
         private VsSettings vsSettings;
         private JumpLabelUserControl.CachedSetupParams jumpLabelCachedSetupParams = new JumpLabelUserControl.CachedSetupParams();
 
-        private struct Jump
+        private readonly struct Jump
         {
-            public SnapshotSpan span;
-            public string label;
-            public JumpLabelUserControl labelAdornment;
-            public IVsWindowFrame windowFrame;
+            public Jump(
+                    SnapshotSpan span,
+                    string label,
+                    JumpLabelUserControl labelAdornment,
+                    IVsWindowFrame windowFrame,
+                    IVsTextView windowPrimaryTextView,
+                    string vanillaTabCaption
+                ) 
+            {
+                this.span = span;
+                this.label = label;
+                this.labelAdornment = labelAdornment;
+                this.windowFrame = windowFrame;
+                this.windowPrimaryTextView = windowPrimaryTextView;
+                this.vanillaTabCaption = vanillaTabCaption;
+            }
+
+            public SnapshotSpan span {get; }
+            public string label {get; }
+            public JumpLabelUserControl labelAdornment {get; }
+            public IVsWindowFrame windowFrame { get; }
+            public IVsTextView windowPrimaryTextView { get; }
+            public string vanillaTabCaption { get; }
         };
-        private struct JumpWord
+
+        private readonly struct JumpWord
         {
-            public int distanceToCursor;
-            public Rect adornmentBounds;
-            public SnapshotSpan span;
-            public string text;
-            public IVsWindowFrame windowFrame;
+            public JumpWord( 
+                    int distanceToCursor,
+                    Rect adornmentBounds,
+                    SnapshotSpan span,
+                    string text,
+                    IVsWindowFrame windowFrame,
+                    IVsTextView windowPrimaryTextView,
+                    string vanillaTabCaption
+                )
+            {
+                this.distanceToCursor = distanceToCursor;
+                this.adornmentBounds = adornmentBounds;
+                this.span = span;
+                this.text  = text;
+                this.windowFrame = windowFrame;
+                this.windowPrimaryTextView = windowPrimaryTextView;
+                this.vanillaTabCaption = vanillaTabCaption;
+            }
+
+            public int distanceToCursor {get; }
+            public Rect adornmentBounds {get; }
+            public SnapshotSpan span {get; }
+            public string text {get; }
+            public IVsWindowFrame windowFrame {get; }
+            public IVsTextView windowPrimaryTextView { get; }
+            public string vanillaTabCaption { get; }
         };
 
         private List<Jump> currentJumps = new List<Jump>();
@@ -97,6 +148,7 @@ namespace PeasyMotion
         const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
 
         private JumpMode jumpMode = JumpMode.InvalidMode;
+        public JumpMode CurrentJumpMode { get { return jumpMode; } }
 
         public PeasyMotionEdAdornment() { // just for listener
         }
@@ -105,7 +157,7 @@ namespace PeasyMotion
         /// Initializes a new instance of the <see cref="PeasyMotionEdAdornment"/> class.
         /// </summary>
         /// <param name="view">Text view to create the adornment for</param>
-        public PeasyMotionEdAdornment(IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
+        public PeasyMotionEdAdornment(IVsTextView vsTextView, IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
         {
             jumpMode = jumpMode_;
 
@@ -118,6 +170,7 @@ namespace PeasyMotion
 
             this.textStructureNavigator = textStructNav;
 
+            this.vsTextView = vsTextView;
             this.view = view;
             this.view.LayoutChanged += this.OnLayoutChanged;
 
@@ -228,14 +281,14 @@ namespace PeasyMotion
                     Geometry geometry = this.view.TextViewLines.GetTextMarkerGeometry(firstCharSpan);
                     if (geometry != null)
                     {
-                        var jw = new JumpWord()
-                        {
-                            distanceToCursor = Math.Abs(i - cursorIndex),
-                            adornmentBounds = geometry.Bounds,
-                            span = firstCharSpan,
-                            text = null,
-                            windowFrame = null
-                        };
+                        var jw = new JumpWord(
+                            distanceToCursor : Math.Abs(i - cursorIndex),
+                            adornmentBounds : geometry.Bounds,
+                            span : firstCharSpan,
+                            text : null,
+                            windowFrame : null,
+                            windowPrimaryTextView : null,
+                            vanillaTabCaption : null);
                         jumpWords.Add(jw);
                         lastJumpPos = i;
                     }
@@ -248,106 +301,79 @@ namespace PeasyMotion
 
                 currentPoint = nextPoint;
             }
-#if false
-            for (int i = 0; i < 256; i++) {
-                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
-                Debug.WriteLine("Char.IsControl(" + ((char)i) + " = " + Char.IsControl((char)i));
-                Debug.WriteLine("Char.IsDigit(" + ((char)i) + " = " + Char.IsDigit((char)i));
-                Debug.WriteLine("Char.IsHighSurrogate(" + ((char)i) + " = " + Char.IsHighSurrogate((char)i));
-                Debug.WriteLine("Char.IsLetterOrDigit(" + ((char)i) + " = " + Char.IsLetterOrDigit((char)i));
-                Debug.WriteLine("Char.IsLowSurrogate(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
-                Debug.WriteLine("Char.IsNumber(" + ((char)i) + " = " + Char.IsNumber((char)i));
-                Debug.WriteLine("Char.IsPunctuation(" + ((char)i) + " = " + Char.IsPunctuation((char)i));
-                Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsSeparator((char)i));
-                Debug.WriteLine("Char.IsSymbol(" + ((char)i) + " = " + Char.IsSymbol((char)i));
-                Debug.WriteLine("-----");
-            }
-#endif
-            /* // too slow
-            do
-            {
-                var word_span = GetNextWord(new SnapshotPoint(this.view.TextSnapshot, currentTextPos));
-                if (word_span.HasValue && (!word_span.Value.Contains(cursorSnapshotPt)))
-                {
-                    var word = this.view.TextSnapshot.GetText(word_span.Value);
-                    if (Char.IsLetter(word[0]) || Char.IsNumber(word[0]) )
-                    {
-                        //Debug.WriteLine(word);
-                        int charIndex = word_span.Value.Start;
-                        SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(charIndex, charIndex + 1));
-                        Geometry geometry = this.view.TextViewLines.GetTextMarkerGeometry(firstCharSpan);
-                        if (geometry != null)
-                        {
-                            var jw = new JumpWord()
-                            {
-                                distanceToCursor = Math.Abs(charIndex - cursorIndex),
-                                adornmentBounds = geometry.Bounds,
-                                span = firstCharSpan,
-                                text = word
-                            };
-                            jumpWords.Add(jw);
-                        }
-                    }
-                    currentTextPos = word_span.Value.End;
-                }
-                else
-                {
-                    currentTextPos++;
-                }
-            } while (currentTextPos < lastTextPos);
-            */
-
 #if MEASUREEXECTIME
             watch1.Stop();
-            Debug.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
             var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
-#if MEASUREEXECTIME
-            //TODO: MEASURE DOC TAB LABEL ASSIGNMENT SPEED
-#endif
             if (jumpMode == JumpMode.VisibleDocuments) {
                 //TODO: extract FN
-                //var Site = PeasyMotionActivate.Instance.ServiceProvider;
-                var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
-                if (vsUIShell == null) return;
-                var wfs = vsUIShell.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
-                int P = 0;
+#if MEASUREEXECTIME
+                var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
+#endif
+                //var vsUIShell4 = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
+                //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
+                var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell;
+                var wfs = vsUIShell.GetDocumentWindowFrames().GetValueOrDefault();
+                //TODO: separate property for Tab Label assignment Algo selection???
+                var currentWindowFrame = this.vsTextView.GetWindowFrame().GetValueOrDefault(null);
+                        
                 Rect emptyRect = new Rect();
                 SnapshotSpan emptySpan = new SnapshotSpan();
+                Trace.WriteLine($"GetDocumentWindowFrames returned {wfs.Count} window frames");
+                int wfi = 0; // there is no easy way to determine document tab coordinates T_T
                 foreach(var wf in wfs) {
-                    //TODO: DOUBLE EXEC ?!??!?!?
-                    //if (S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
+                    //if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
+                    //wf.GetProperty((int)VsFramePropID.OverrideCaption, out var oovcap); 
+                    //wf.GetProperty((int)VsFramePropID.EditorCaption, out var oecap);
+                    //wf.GetProperty((int)VsFramePropID.OwnerCaption, out var oocap);
+                    wf.GetProperty((int)VsFramePropID.Caption, out var oce);
+                    string ce = (string)oce;
+                    //string ecap = (string)oecap;
+                    //string ocap = (string)oocap;
+                    //string ovcap = (string)oovcap;
+                    //var _ = wf.IsOnScreen(out int isonscreen_int);  // unreliable
+                    //var inOnScreen = isonscreen_int != 0; // unreliable
+                    //var isVisible = VSConstants.S_OK == wf.IsVisible(); // unreliable
+                    //int x = -9, y = -9, px = -9, py = -9;
+                    //wf.GetFramePos(null, out Guid _, out x, out y, out px, out py);
+                    //if (wf is IVsWindowFrame4 wf4) { wf4.GetWindowScreenRect(out x, out y, out px, out py); }
+                    //Trace.WriteLine($"WindowFrame[{wfi++}] Current={currentWindowFrame==wf} Caption={ce} OwnerCaption={ocap} "+
+                    //    $"EditorCaption={ecap} OverrideCaption={ovcap} "+
+                    //    $"IsOnScreen={inOnScreen} IsVisible={isVisible} {x} {y} {px} {py}");
+                    if (currentWindowFrame != wf)
                     {
-                        if (c == null) {
-                            if (S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
-                                var sc = (string)ce;
-                                //MessageBox.Show(sc);  
-                                sc = $"[{P++}]{sc}";
-                                //wf.SetProperty((int)VsFramePropID.EditorCaption, sc);
-                                //wf.SetProperty((int)VsFramePropID.OwnerCaption, sc);
-                                //wf.SetProperty((int)VsFramePropID.OverrideCaption, sc);
-                                var jw = new JumpWord()
-                                {
-                                //TODO: MEASURE DIST FROM ACTIVE DOCUMENT
-                                    distanceToCursor = P, //Math.Abs(i - cursorIndex),
-                                    adornmentBounds = emptyRect,
-                                    span = emptySpan,
-                                    text = null,
-                                    windowFrame = wf,
-                                };
+                        //if (c == null) 
+                        {
+                            //if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) 
+                            {
+                                var cw = wf.GetCodeWindow().GetValueOrDefault(null);
+                                IVsTextView wptv = wf.GetCodeWindow().GetValueOrDefault(null) ? .GetPrimaryView().GetValueOrDefault(null);
+                                        
+                                var distToCurrentDocument = 
+                                    Math.Abs(wfi); //TODO: HOW TO SETUP AN INDEX?!?!?!?!?
+                                var jw = new JumpWord(
+                                    distanceToCursor : distToCurrentDocument,
+                                    adornmentBounds : emptyRect,
+                                    span : emptySpan,
+                                    text : null,
+                                    windowFrame : wf,
+                                    windowPrimaryTextView : wptv,
+                                    vanillaTabCaption : ce
+                                );
                                 jumpWords.Add(jw);
                             }
-                        } else {
-                            //wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
                         } 
                     }
-                    var cw = wf.GetCodeWindow();
-                    IVsCodeWindow cwi = null;
-                    if (cw.TryGetValue(out cwi)) {
-                        //cwi.SetBaseEditorCaption(new string[]{ (P++).ToString() });
-                    }
+                    //var cw = wf.GetCodeWindow(); //cwi = null;
+                    //if (cw.TryGetValue(out IVsCodeWindow cwi)) { //cwi?.SetBaseEditorCaption(new string[]{ (P++).ToString() }); }
                 }
+#if MEASUREEXECTIME
+            //TODO: MEASURE DOC TAB LABEL ASSIGNMENT SPEED
+            watch2_0.Stop();
+            Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
+#endif
             }
 
 
@@ -358,7 +384,7 @@ namespace PeasyMotion
             }
 #if MEASUREEXECTIME
             watch2.Stop();
-            Debug.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
@@ -366,29 +392,26 @@ namespace PeasyMotion
 
 #if MEASUREEXECTIME
             watch3.Stop();
-            Debug.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch?.ElapsedMilliseconds} ms");
             adornmentCreateStopwatch = null;
-            Debug.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem?.ElapsedMilliseconds} ms");
             createAdornmentUIElem = null;
-            Debug.WriteLine($"PeasyMotion Adornments group&create: {watch3.ElapsedMilliseconds} ms");
-            Debug.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords.Count}");
+            Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3?.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords?.Count}");
 #endif
 
-#if MEASUREEXECTIME
-    //TODO: MEASURE TAB CAPTION CHANGE
-#endif
             if (jumpMode == JumpMode.VisibleDocuments) {
+#if MEASUREEXECTIME
+                var setCaptionTiming = System.Diagnostics.Stopwatch.StartNew();
+#endif
                 foreach(var jump in currentJumps) {
-                    var wf = jump.windowFrame;
-                    //if (S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
-                    {
-                        if (c == null) {
-                            if (S_OK == wf.GetProperty((int)VsFramePropID.Caption, out var ce)) {
-                                wf.SetProperty((int)VsFramePropID.OverrideCaption, "[" + jump.label + "]" + (string)ce);
-                            }
-                        }
-                    }
+                    jump.windowFrame.SetDocumentWindowFrameCaptionWithLabel(
+                        jump.windowPrimaryTextView, jump.vanillaTabCaption, jump.label);
                 }
+#if MEASUREEXECTIME
+                setCaptionTiming.Stop();
+                Trace.WriteLine($"PeasyMotion document tabs set caption: {setCaptionTiming?.ElapsedMilliseconds} ms");
+#endif
             }
         }
 
@@ -397,6 +420,14 @@ namespace PeasyMotion
             if (view != null) {
                 this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
             }
+        }
+        
+        public static string getDocumentTabCaptionWithLabel(string originalCaption, string jumpLabel) {
+            //TODO: MAYBE PROVIDE AN OPTION TO CONFIGURE LABEL TEXT DECORATION???
+            //return $"[{jumpLabel}]{originalCaption}";
+            //return $"[{jumpLabel.ToUpper()}]{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for [ and] chars
+            //return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 3 <<= for ' | ' chars
+            return $"{jumpLabel} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for '| ' chars
         }
 
         public void Dispose()
@@ -494,8 +525,7 @@ namespace PeasyMotion
                 {
                     keyCounts[keyCountsKeys[key]] += childrenCount;
                     targetsLeft -= childrenCount;
-                    if (targetsLeft <= 0)
-                    {
+                    if (targetsLeft <= 0) {
                         keyCounts[keyCountsKeys[key]] += targetsLeft;
                         break;
                     }
@@ -528,15 +558,12 @@ namespace PeasyMotion
                     string jumpLabel = prefix + keys0[keyIndex];
 
                     JumpLabelUserControl adornment = null;
-                    if (jw.windowFrame == null) 
+                    if (jw.windowFrame == null)  // winframe=null => regular textview navigation.
                     {
 #if MEASUREEXECTIME
-                        if (createAdornmentUIElem == null)
-                        {
+                        if (createAdornmentUIElem == null) {
                             createAdornmentUIElem = Stopwatch.StartNew();
-                        }
-                        else
-                        {
+                        } else {
                             createAdornmentUIElem.Start();
                         }
 #endif
@@ -548,12 +575,9 @@ namespace PeasyMotion
 #endif
 
 #if MEASUREEXECTIME
-                        if (adornmentCreateStopwatch == null)
-                        {
+                        if (adornmentCreateStopwatch == null) {
                             adornmentCreateStopwatch = Stopwatch.StartNew();
-                        }
-                        else
-                        {
+                        } else {
                             adornmentCreateStopwatch.Start();
                         }
 #endif
@@ -564,9 +588,14 @@ namespace PeasyMotion
                     }
 
                     //Debug.WriteLine(jw.text + " -> |" + jumpLabel + "|");
-                    var cj = new Jump() { span = jw.span, label = jumpLabel, labelAdornment = adornment, 
-                        windowFrame = jw.windowFrame 
-                    };
+                    var cj = new Jump(
+                        span : jw.span, 
+                        label : jumpLabel, 
+                        labelAdornment : adornment, 
+                        windowFrame : jw.windowFrame,
+                        vanillaTabCaption : jw.vanillaTabCaption,
+                        windowPrimaryTextView : jw.windowPrimaryTextView
+                    );
                     currentJumps.Add(cj);
                 }
                 else
@@ -624,42 +653,71 @@ namespace PeasyMotion
         internal void Reset()
         {
             this.layer.RemoveAllAdornments();
+            foreach (var j in this.currentJumps) {
+                j.windowFrame?.RemoveJumpLabelFromDocumentWindowFrameCaption(j.windowPrimaryTextView, j.vanillaTabCaption);
+            }
             this.currentJumps.Clear();
         }
 
         internal bool NoLabelsLeft() => (this.currentJumps.Count == 0);
 
-        internal JumpToResult JumpTo(string label) // returns null if jump motion is not finished yet
+        // returns true if jump succeded
+        internal bool JumpTo(string label, out JumpToResult jumpToResult) // returns null if jump motion is not finished yet
         {
             int idx = currentJumps.FindIndex(0, j => j.label == label);
             if (-1 < idx)
             {
-                return new JumpToResult() {
-                    currentCursorPosition = this.view.Caret.Position.BufferPosition.Position, 
-                    jumpLabelSpan = currentJumps[idx].span,
-                    windowFrame = currentJumps[idx].windowFrame,
-                };
+                jumpToResult = new JumpToResult(
+                    currentCursorPosition : this.view.Caret.Position.BufferPosition.Position, 
+                    jumpLabelSpan : currentJumps[idx].span,
+                    windowFrame : currentJumps[idx].windowFrame
+                );
+                return true;
             } 
             else
             {
-                currentJumps.RemoveAll(
-                    delegate (Jump j)
-                    {
-                        bool b = !j.label.StartsWith(label, StringComparison.InvariantCulture);
-                        if (b && (null != j.labelAdornment)) {
-                            this.layer.RemoveAdornment(j.labelAdornment);
+                if (jumpMode != JumpMode.VisibleDocuments) { // keep all labeled document tabs
+                    currentJumps.RemoveAll(
+                        delegate (Jump j)
+                        {
+                            bool b = !j.label.StartsWith(label, StringComparison.InvariantCulture);
+                            if (b) {
+                                if (null != j.labelAdornment) {
+                                    this.layer.RemoveAdornment(j.labelAdornment);
+                                }
+                                //j.windowFrame?.RemoveJumpLabelFromDocumentWindowFrameCaption();
+                            }
+                    
+                            return b;
                         }
-                        return b;
-                    }
-                );
+                    );
+                }
 
-
+#if MEASUREEXECTIME
+                var timing1 = System.Diagnostics.Stopwatch.StartNew();
+#endif
                 foreach(Jump j in currentJumps)
                 {
-                    j.labelAdornment?.UpdateView(j.label.Substring(label.Length), this.jumpLabelCachedSetupParams);
+                    var labelRemainingMotionSubstr = j.label.Substring(label.Length);
+                    j.labelAdornment?.UpdateView(labelRemainingMotionSubstr, this.jumpLabelCachedSetupParams);
+                    //TODO: Stabilize tab caption, keeping it same width as before!!!!!! 
+                    //      Possible with fixed width fonts?
+                    if (labelRemainingMotionSubstr.Length > 0) {
+                        // replace parts of document caption with label & decor, trying to 
+                        //preserve same tab caption width!
+                        j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
+                            j.windowPrimaryTextView, 
+                            j.vanillaTabCaption,
+                            labelRemainingMotionSubstr + new string('_', j.label.Length-label.Length));
+                    }
                 }
+#if MEASUREEXECTIME
+                timing1.Stop();
+                Trace.WriteLine($"PeasyMotion document tabs update caption: {timing1?.ElapsedMilliseconds} ms");
+#endif
             }
-            return null;
+            jumpToResult = new JumpToResult();
+            return false;
         }
     }
 }
