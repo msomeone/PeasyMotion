@@ -197,21 +197,18 @@ namespace PeasyMotion
     public static class Extensions
     {
         public static void SetDocumentWindowFrameCaptionWithLabel(this IVsWindowFrame wf, 
-                    IVsTextView primaryView, string vanillaTabCaption, string jumpLabel)
+                    string vanillaTabCaption, string jumpLabel)
         {
             //TODO: (check for length (what if vanilla caption is shorter than label & decor ???!!!)
             var newCaption = PeasyMotionEdAdornment.getDocumentTabCaptionWithLabel(vanillaTabCaption, jumpLabel);
             wf.SetProperty((int)VsFramePropID.OverrideCaption, newCaption);
-            primaryView.UpdateViewFrameCaption();
             //Debug.WriteLine($"WindowFrame oldCaption={vanillaTabCaption} => newCaption={newCaption}");
         }
 
-        public static void RemoveJumpLabelFromDocumentWindowFrameCaption(this IVsWindowFrame wf, 
-                    IVsTextView primaryView, string vanillaTabCaption)
+        public static void RemoveJumpLabelFromDocumentWindowFrameCaption(this IVsWindowFrame wf, string vanillaTabCaption)
         {
             wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
             //wf.SetProperty((int)VsFramePropID.Caption, vanillaTabCaption); //TODO: checl if we really need this
-            primaryView.UpdateViewFrameCaption(); //TODO: maybe batch those calls and exec separately after updating all captions
         }
 
         public static Result<IVsWindowFrame> GetWindowFrame(this IVsTextView textView)
@@ -402,6 +399,8 @@ namespace PeasyMotion
         private static bool disableVsVimCmdAvailable = false;
         private static bool enableVsVimCmdAvailable = false;
         private CommandExecutorService cmdExec = null;
+        public IVsUIShell iVsUiShell = null;
+        public IVsUIShell4 iVsUiShell4 = null;
 
         private static string ViEmuEnableDisableCommand = "ViEmu.EnableDisableViEmu";
         private static bool viEmuPluginPresent = false;
@@ -436,7 +435,20 @@ namespace PeasyMotion
             disableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetDisabled);
             enableVsVimCmdAvailable = cmdExec.IsCommandAvailable(VsVimSetEnabled);
             viEmuPluginPresent = cmdExec.IsCommandAvailable(ViEmuEnableDisableCommand);
+            iVsUiShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell;
+            iVsUiShell4 = iVsUiShell as IVsUIShell4;
             JumpLabelUserControl.WarmupCache();
+            // warmup options
+            GeneralOptions.Instance.caretPositionSensivity = GeneralOptions.Instance.caretPositionSensivity;
+            // warmp up:
+            var wfs = iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
+            if (wfs.Count > 0) {
+                Trace.WriteLine("GetDocumentWindowFrames warmed up");
+                foreach(var wf in wfs) {
+                    wf.GetProperty((int)VsFramePropID.Caption, out var oce);
+                    wf.SetProperty((int)VsFramePropID.Caption, (string)oce);
+                }
+            }
         }
 
         private void CreateMenu() {

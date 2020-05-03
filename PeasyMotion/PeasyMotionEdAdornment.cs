@@ -1,6 +1,7 @@
 ﻿#define MEASUREEXECTIME
 
 using System;
+using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.VisualStudio.Text;
@@ -143,6 +144,7 @@ namespace PeasyMotion
         };
 
         private List<Jump> currentJumps = new List<Jump>();
+        private List<Jump> inactiveJumps = new List<Jump>();
         public bool anyJumpsAvailable() => currentJumps.Count > 0;
 
         const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
@@ -307,15 +309,14 @@ namespace PeasyMotion
             var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
 
-            if (jumpMode == JumpMode.VisibleDocuments) {
+            if (jumpMode == JumpMode.VisibleDocuments) 
+            {
                 //TODO: extract FN
 #if MEASUREEXECTIME
                 var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-                //var vsUIShell4 = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell4;
                 //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
-                var vsUIShell = Package.GetGlobalService(typeof(SVsUIShell)) as IVsUIShell;
-                var wfs = vsUIShell.GetDocumentWindowFrames().GetValueOrDefault();
+                var wfs = PeasyMotionActivate.Instance.iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
                 //TODO: separate property for Tab Label assignment Algo selection???
                 var currentWindowFrame = this.vsTextView.GetWindowFrame().GetValueOrDefault(null);
                         
@@ -370,9 +371,8 @@ namespace PeasyMotion
                     //if (cw.TryGetValue(out IVsCodeWindow cwi)) { //cwi?.SetBaseEditorCaption(new string[]{ (P++).ToString() }); }
                 }
 #if MEASUREEXECTIME
-            //TODO: MEASURE DOC TAB LABEL ASSIGNMENT SPEED
-            watch2_0.Stop();
-            Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
+                watch2_0.Stop();
+                Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
 #endif
             }
 
@@ -404,14 +404,17 @@ namespace PeasyMotion
 #if MEASUREEXECTIME
                 var setCaptionTiming = System.Diagnostics.Stopwatch.StartNew();
 #endif
+                var primaryViewsToUpdate = new List<IVsTextView>();
                 foreach(var jump in currentJumps) {
-                    jump.windowFrame.SetDocumentWindowFrameCaptionWithLabel(
-                        jump.windowPrimaryTextView, jump.vanillaTabCaption, jump.label);
+                    jump.windowFrame.SetDocumentWindowFrameCaptionWithLabel(jump.vanillaTabCaption, jump.label);
+                    primaryViewsToUpdate.Add(jump.windowPrimaryTextView);
                 }
 #if MEASUREEXECTIME
                 setCaptionTiming.Stop();
                 Trace.WriteLine($"PeasyMotion document tabs set caption: {setCaptionTiming?.ElapsedMilliseconds} ms");
 #endif
+
+                UpdateViewFramesCaptions(primaryViewsToUpdate);
             }
         }
 
@@ -421,13 +424,26 @@ namespace PeasyMotion
                 this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
             }
         }
+
+        public static void UpdateViewFramesCaptions(List<IVsTextView> tviews) {
+#if MEASUREEXECTIME
+            var timing2 = System.Diagnostics.Stopwatch.StartNew();
+#endif
+            foreach(var v in tviews) {
+                v?.UpdateViewFrameCaption();
+            }
+#if MEASUREEXECTIME
+            timing2.Stop();
+            Trace.WriteLine($"PeasyMotion document tabs view update captions (UpdateViewFramesCaptions): {timing2?.ElapsedMilliseconds} ms");
+#endif
+        }
         
         public static string getDocumentTabCaptionWithLabel(string originalCaption, string jumpLabel) {
             //TODO: MAYBE PROVIDE AN OPTION TO CONFIGURE LABEL TEXT DECORATION???
             //return $"[{jumpLabel}]{originalCaption}";
             //return $"[{jumpLabel.ToUpper()}]{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for [ and] chars
             //return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 3 <<= for ' | ' chars
-            return $"{jumpLabel} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for '| ' chars
+            return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for '| ' chars
         }
 
         public void Dispose()
@@ -653,10 +669,19 @@ namespace PeasyMotion
         internal void Reset()
         {
             this.layer.RemoveAllAdornments();
-            foreach (var j in this.currentJumps) {
-                j.windowFrame?.RemoveJumpLabelFromDocumentWindowFrameCaption(j.windowPrimaryTextView, j.vanillaTabCaption);
+            List<Jump> cleanupJumps = new List<Jump>(this.currentJumps);
+            cleanupJumps.AddRange(inactiveJumps);
+
+            List<IVsTextView> textViewsToUpdate = new List<IVsTextView>();
+            foreach (var j in cleanupJumps) {
+                j.windowFrame?.RemoveJumpLabelFromDocumentWindowFrameCaption(j.vanillaTabCaption);
+                textViewsToUpdate.Add(j.windowPrimaryTextView);
             }
+
             this.currentJumps.Clear();
+            this.inactiveJumps.Clear();
+
+            UpdateViewFramesCaptions(textViewsToUpdate);
         }
 
         internal bool NoLabelsLeft() => (this.currentJumps.Count == 0);
@@ -676,45 +701,55 @@ namespace PeasyMotion
             } 
             else
             {
-                if (jumpMode != JumpMode.VisibleDocuments) { // keep all labeled document tabs
-                    currentJumps.RemoveAll(
-                        delegate (Jump j)
-                        {
-                            bool b = !j.label.StartsWith(label, StringComparison.InvariantCulture);
-                            if (b) {
-                                if (null != j.labelAdornment) {
-                                    this.layer.RemoveAdornment(j.labelAdornment);
-                                }
-                                //j.windowFrame?.RemoveJumpLabelFromDocumentWindowFrameCaption();
-                            }
-                    
-                            return b;
-                        }
-                    );
-                }
-
 #if MEASUREEXECTIME
                 var timing1 = System.Diagnostics.Stopwatch.StartNew();
 #endif
+                var jumpsToRemoveOrMakeInactive = currentJumps.Where(
+                    j => !j.label.StartsWith(label, StringComparison.InvariantCulture)).ToList();
+    
+                var textViewsToUpdateCaptions = new List<IVsTextView>();
+                if (jumpMode == JumpMode.VisibleDocuments) 
+                { // keep all labeled document tabs
+                    foreach(Jump j in jumpsToRemoveOrMakeInactive) { // set empty caption and dont touch anymore
+                        j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
+                            j.vanillaTabCaption,
+                            new string(' ', j.label.Length)
+                        );
+                        textViewsToUpdateCaptions.Add(j.windowPrimaryTextView);
+                    }
+                    inactiveJumps.AddRange(jumpsToRemoveOrMakeInactive);
+                }
+
+                jumpsToRemoveOrMakeInactive.ForEach(delegate(Jump j) {// remove adornments that do not match motion
+                        currentJumps.Remove(j);
+                        if (null != j.labelAdornment) {
+                            this.layer.RemoveAdornment(j.labelAdornment);
+                        }
+                    }
+                );
+
                 foreach(Jump j in currentJumps)
                 {
                     var labelRemainingMotionSubstr = j.label.Substring(label.Length);
+
                     j.labelAdornment?.UpdateView(labelRemainingMotionSubstr, this.jumpLabelCachedSetupParams);
+
                     //TODO: Stabilize tab caption, keeping it same width as before!!!!!! 
-                    //      Possible with fixed width fonts?
-                    if (labelRemainingMotionSubstr.Length > 0) {
-                        // replace parts of document caption with label & decor, trying to 
-                        //preserve same tab caption width!
-                        j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
-                            j.windowPrimaryTextView, 
-                            j.vanillaTabCaption,
-                            labelRemainingMotionSubstr + new string('_', j.label.Length-label.Length));
-                    }
+                    //      Best results with fixed width fonts in Tools->Fonts..->Environment
+                    // replace parts of document caption with label & decor, trying to 
+                    //preserve same tab caption width!
+                    j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
+                        j.vanillaTabCaption,
+                        new string(' ', j.label.Length-label.Length) + labelRemainingMotionSubstr
+                    );
+                    textViewsToUpdateCaptions.Add(j.windowPrimaryTextView);
                 }
 #if MEASUREEXECTIME
                 timing1.Stop();
                 Trace.WriteLine($"PeasyMotion document tabs update caption: {timing1?.ElapsedMilliseconds} ms");
 #endif
+                
+                UpdateViewFramesCaptions(textViewsToUpdateCaptions);
             }
             jumpToResult = new JumpToResult();
             return false;
