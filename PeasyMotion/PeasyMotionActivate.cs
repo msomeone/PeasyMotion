@@ -345,9 +345,8 @@ namespace PeasyMotion
 
         private void OnTextViewFocusLost(object sender, EventArgs e) {
             if (adornmentMgr != null) {
-                adornmentMgr.view.LostAggregateFocus -= OnTextViewFocusLost;
+                this.Deactivate();
             }
-            this.Deactivate();
         }
 
         private void TryDisableVsVim()
@@ -458,6 +457,9 @@ namespace PeasyMotion
         public void Deactivate()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (adornmentMgr != null) {
+                adornmentMgr.view.LostAggregateFocus -= OnTextViewFocusLost;
+            }
             StopListening2Keyboard();
             TryEnableVsVim();
             TryEnableViEmu();
