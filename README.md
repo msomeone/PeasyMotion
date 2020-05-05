@@ -4,7 +4,8 @@ PeasyMotion
 
 ![Animated demonstration](preview.gif)
 
-Implements "word-motion" mode ~same way as it is done in vim-easymotion + open documents navigation
+Implements "word-motion" mode ~same way as it is done in vim-easymotion and 
+Jump to open document via jump label combo.
 This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
@@ -51,6 +52,9 @@ nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
 nmap zw gS:vsc Tools.InvokePeasyMotionLineJumpToWordBegining<CR>
 "Jump to word ending in current line
 nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
+
+"Jump to any open document tab
+nmap ;w gS:vsc Tools.InvokePeasyMotionJumpToDocumentTab<CR>
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
