@@ -52,7 +52,9 @@
     <Compile Include="BaseOptionPage.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CommandExecutorService.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="HResult.cs" />
     <Compile Include="InfoBarService.cs" />
     <Compile Include="InputListener.cs" />
     <Compile Include="JumpLabelClassifierProvider.cs" />
@@ -70,6 +72,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PeasyMotionPackage.cs" />
+    <Compile Include="VsMethodExtensions.cs" />
     <Compile Include="VsSettings.cs" />
   </ItemGroup>
   <ItemGroup>
