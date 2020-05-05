@@ -68,7 +68,14 @@ namespace PeasyMotion
         }
 
             //TODO: test editor command & input field
-            //TODO: hot key fucked up!
+            //TODO: how to DocTabNavJump from non-text editors ?!?? how to listen to kb globally?
+            //TODO: how to cancel jump if text view was switched? | HANDLE WpfTextView change / focus change!
+            //TODO: hot keys fucked up!
+            //TODO: MAYBE PROVIDE AN OPTION TO CONFIGURE LABEL TEXT DECORATION???  for getDocumentTabCaptionWithLabel
+
+            //TODO: HOW TO SETUP AN INDEX?!?!?!?!? (find a way to measure distance between current document and target tab)
+            ///      v-----^ <--- related issues
+            //TODO: separate property for Tab Label assignment Algo selection???
 
         #endregion
     }

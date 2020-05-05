@@ -161,6 +161,9 @@ namespace PeasyMotion
         /// <param name="view">Text view to create the adornment for</param>
         public PeasyMotionEdAdornment(IVsTextView vsTextView, IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
         {
+#if MEASUREEXECTIME
+            var watch0 = System.Diagnostics.Stopwatch.StartNew();
+#endif
             jumpMode = jumpMode_;
 
             var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.jumpLabelAssignmentAlgorithm;
@@ -168,13 +171,11 @@ namespace PeasyMotion
 
             this.layer = view.GetAdornmentLayer("PeasyMotionEdAdornment");
 
-            var watch1 = System.Diagnostics.Stopwatch.StartNew();
-
             this.textStructureNavigator = textStructNav;
 
             this.vsTextView = vsTextView;
             this.view = view;
-            this.view.LayoutChanged += this.OnLayoutChanged;
+            //this.view.LayoutChanged += this.OnLayoutChanged;
 
             this.vsSettings = VsSettings.GetOrCreate(view);
             // subscribe to fmt updates, so user can tune color faster if PeasyMotion was invoked
@@ -189,6 +190,70 @@ namespace PeasyMotion
             this.jumpLabelCachedSetupParams.Freeze();
 
             var jumpWords = new List<JumpWord>();
+#if MEASUREEXECTIME
+            watch0.Stop();
+            Trace.WriteLine($"PeasyMotion Adornment ctor settings, members init, etc: {watch0.ElapsedMilliseconds} ms");
+#endif
+
+
+            if (jumpMode == JumpMode.VisibleDocuments) {
+                SetupJumpToDocumentTabMode(jumpWords);
+            } else {
+                SetupJumpInsideTextViewMode(jumpWords, jumpLabelAssignmentAlgorithm, caretPositionSensivity);
+            }
+
+            if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
+            {
+#if MEASUREEXECTIME
+                var watch2 = System.Diagnostics.Stopwatch.StartNew();
+#endif
+                // sort jump words from closest to cursor to farthest
+                jumpWords.Sort((a, b) => -a.distanceToCursor.CompareTo(b.distanceToCursor));
+#if MEASUREEXECTIME
+                watch2.Stop();
+                Trace.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
+#endif
+            }
+
+#if MEASUREEXECTIME
+            var watch3 = System.Diagnostics.Stopwatch.StartNew();
+#endif
+            _ = computeGroups(0, jumpWords.Count - 1, jumpLabelKeyArray, null, jumpWords);
+
+#if MEASUREEXECTIME
+            watch3.Stop();
+            Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3?.ElapsedMilliseconds} ms");
+#endif
+
+#if MEASUREEXECTIME
+            Trace.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch?.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem?.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords?.Count}");
+            createAdornmentUIElem = null;
+            adornmentCreateStopwatch = null;
+#endif
+
+            if (jumpMode == JumpMode.VisibleDocuments) {
+                SetupJumpToDocumentTabFinalPhase();
+            }
+        }
+
+        ~PeasyMotionEdAdornment()
+        {
+            if (view != null) {
+                this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
+            }
+        }
+
+        private void SetupJumpInsideTextViewMode(
+                List<JumpWord> jumpWords, 
+                JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm,
+                int caretPositionSensivity
+            )
+        {
+#if MEASUREEXECTIME
+            var watch1 = System.Diagnostics.Stopwatch.StartNew();
+#endif
 
             int currentTextPos = this.view.TextViewLines.FirstVisibleLine.Start;
             int lastTextPos = this.view.TextViewLines.LastVisibleLine.End;
@@ -306,101 +371,75 @@ namespace PeasyMotion
 #if MEASUREEXECTIME
             watch1.Stop();
             Trace.WriteLine($"PeasyMotion Adornment find words: {watch1.ElapsedMilliseconds} ms");
-            var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
+        }
 
-            if (jumpMode == JumpMode.VisibleDocuments) 
-            {
-                //TODO: extract FN
+        private void SetupJumpToDocumentTabMode(List<JumpWord> jumpWords)
+        {
 #if MEASUREEXECTIME
-                var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
-                Stopwatch getCodeWindwowsSW = null;
-                Stopwatch getPrimaryViewSW = null;
+            var watch2_0 = System.Diagnostics.Stopwatch.StartNew();
+            Stopwatch getCodeWindwowsSW = null;
+            Stopwatch getPrimaryViewSW = null;
 #endif
-                //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
-                var wfs = PeasyMotionActivate.Instance.iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
-                //TODO: separate property for Tab Label assignment Algo selection???
-                var currentWindowFrame = this.vsTextView.GetWindowFrame().GetValueOrDefault(null);
-                        
-                Rect emptyRect = new Rect();
-                SnapshotSpan emptySpan = new SnapshotSpan();
-                Trace.WriteLine($"GetDocumentWindowFrames returned {wfs.Count} window frames");
-                int wfi = 0; // there is no easy way to determine document tab coordinates T_T
-                foreach(var wf in wfs) 
-                {
-                    wf.GetProperty((int)VsFramePropID.Caption, out var oce);
-                    string ce = (string)oce;
-
-                    if (currentWindowFrame == wf) {
-                        continue;
-                    }
-
-                    //GetCodeWindow || GetPrimaryView are fucking slow!
-#if MEASUREEXECTIME
-                    if (getCodeWindwowsSW == null) { getCodeWindwowsSW = Stopwatch.StartNew();
-                    } else { getCodeWindwowsSW.Start(); }
-#endif
-                    IVsCodeWindow cw = null; //wf.GetCodeWindow().GetValueOrDefault(null);
-#if MEASUREEXECTIME
-                    getCodeWindwowsSW.Stop();
-                    if (getPrimaryViewSW == null) { getPrimaryViewSW = Stopwatch.StartNew();
-                    } else { getPrimaryViewSW.Start(); }
-#endif
-                    //IVsTextView wptv = cw?.GetPrimaryView().GetValueOrDefault(null);
+            //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
+            var wfs = PeasyMotionActivate.Instance.iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
+            var currentWindowFrame = this.vsTextView.GetWindowFrame().GetValueOrDefault(null);
                     
-                    IVsTextView wptv = wf.GetPrimaryTextView();
-#if MEASUREEXECTIME
-                    getPrimaryViewSW.Stop();
-#endif
-                    // VANILLA:
-                    //IVsTextView wptv = wf.GetCodeWindow().GetValueOrDefault(null) ? .GetPrimaryView().GetValueOrDefault(null);
-
-                    var distToCurrentDocument = 
-                        Math.Abs(wfi); //TODO: HOW TO SETUP AN INDEX?!?!?!?!?
-                    var jw = new JumpWord(
-                        distanceToCursor : distToCurrentDocument,
-                        adornmentBounds : emptyRect,
-                        span : emptySpan,
-                        text : null,
-                        windowFrame : wf,
-                        windowPrimaryTextView : wptv,
-                        vanillaTabCaption : ce
-                    );
-                    jumpWords.Add(jw);
-                }
-#if MEASUREEXECTIME
-                watch2_0.Stop();
-                Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
-                Trace.WriteLine($"PeasyMotion get code window total : {getCodeWindwowsSW?.ElapsedMilliseconds} ms");
-                Trace.WriteLine($"PeasyMotion get primary views total : {getPrimaryViewSW?.ElapsedMilliseconds} ms");
-#endif
-            //TODO: HANDLE WpfTextView change / focus change!
-            }
-
-            if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
+            Rect emptyRect = new Rect();
+            SnapshotSpan emptySpan = new SnapshotSpan();
+            Trace.WriteLine($"GetDocumentWindowFrames returned {wfs.Count} window frames");
+            int wfi = 0; // there is no easy way to determine document tab coordinates T_T
+            foreach(var wf in wfs) 
             {
-                // sort jump words from closest to cursor to farthest
-                jumpWords.Sort((a, b) => -a.distanceToCursor.CompareTo(b.distanceToCursor));
+                wf.GetProperty((int)VsFramePropID.Caption, out var oce);
+                string ce = (string)oce;
+
+                if (currentWindowFrame == wf) {
+                    continue;
+                }
+
+                //GetCodeWindow || GetPrimaryView are fucking slow! when more than 10 documents to be processed.
+                // IsOnScreen & IsVisible properties are lying, no easy way to optimize View query
+#if MEASUREEXECTIME
+                if (getCodeWindwowsSW == null) { getCodeWindwowsSW = Stopwatch.StartNew();
+                } else { getCodeWindwowsSW.Start(); }
+#endif
+#if MEASUREEXECTIME
+                getCodeWindwowsSW.Stop();
+                if (getPrimaryViewSW == null) { getPrimaryViewSW = Stopwatch.StartNew();
+                } else { getPrimaryViewSW.Start(); }
+#endif
+                //IVsCodeWindow cw = wf.GetCodeWindow().GetValueOrDefault(null);
+                //IVsTextView wptv = cw?.GetPrimaryView().GetValueOrDefault(null);
+                
+                IVsTextView wptv = wf.GetPrimaryTextView();
+#if MEASUREEXECTIME
+                getPrimaryViewSW.Stop();
+#endif
+                // VANILLA:
+                //IVsTextView wptv = wf.GetCodeWindow().GetValueOrDefault(null) ? .GetPrimaryView().GetValueOrDefault(null);
+
+                var distToCurrentDocument = Math.Abs(wfi);
+                var jw = new JumpWord(
+                    distanceToCursor : wfi,
+                    adornmentBounds : emptyRect,
+                    span : emptySpan,
+                    text : null,
+                    windowFrame : wf,
+                    windowPrimaryTextView : wptv,
+                    vanillaTabCaption : ce
+                );
+                jumpWords.Add(jw);
             }
 #if MEASUREEXECTIME
-            watch2.Stop();
-            Trace.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
-            var watch3 = System.Diagnostics.Stopwatch.StartNew();
+            watch2_0.Stop();
+            Trace.WriteLine($"PeasyMotion Adornment find visible document tabs: {watch2_0.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion get code window total : {getCodeWindwowsSW?.ElapsedMilliseconds} ms");
+            Trace.WriteLine($"PeasyMotion get primary views total : {getPrimaryViewSW?.ElapsedMilliseconds} ms");
 #endif
+        }
 
-            _ = computeGroups(0, jumpWords.Count - 1, jumpLabelKeyArray, null, jumpWords);
-
-#if MEASUREEXECTIME
-            watch3.Stop();
-            Trace.WriteLine($"PeasyMotion Adornments create: {adornmentCreateStopwatch?.ElapsedMilliseconds} ms");
-            adornmentCreateStopwatch = null;
-            Trace.WriteLine($"PeasyMotion Adornments UI Elem create: {createAdornmentUIElem?.ElapsedMilliseconds} ms");
-            createAdornmentUIElem = null;
-            Trace.WriteLine($"PeasyMotion Adornments group&create: {watch3?.ElapsedMilliseconds} ms");
-            Trace.WriteLine($"PeasyMotion Adornment total jump labels - {jumpWords?.Count}");
-#endif
-
-            if (jumpMode == JumpMode.VisibleDocuments) {
+        private void SetupJumpToDocumentTabFinalPhase() {
 #if MEASUREEXECTIME
                 var setCaptionTiming = System.Diagnostics.Stopwatch.StartNew();
 #endif
@@ -413,17 +452,8 @@ namespace PeasyMotion
                 setCaptionTiming.Stop();
                 Trace.WriteLine($"PeasyMotion document tabs set caption: {setCaptionTiming?.ElapsedMilliseconds} ms");
 #endif
-
                 UpdateViewFramesCaptions(primaryViewsToUpdate);
                 
-            }
-        }
-
-        ~PeasyMotionEdAdornment()
-        {
-            if (view != null) {
-                this.vsSettings.PropertyChanged -= this.OnFormattingPropertyChanged;
-            }
         }
 
         public static void UpdateViewFramesCaptions(List<IVsTextView> tviews) {
@@ -440,10 +470,6 @@ namespace PeasyMotion
         }
         
         public static string getDocumentTabCaptionWithLabel(string originalCaption, string jumpLabel) {
-            //TODO: MAYBE PROVIDE AN OPTION TO CONFIGURE LABEL TEXT DECORATION???
-            //return $"[{jumpLabel}]{originalCaption}";
-            //return $"[{jumpLabel.ToUpper()}]{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for [ and] chars
-            //return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 3 <<= for ' | ' chars
             return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for '| ' chars
         }
 
@@ -647,9 +673,7 @@ namespace PeasyMotion
         /// </remarks>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        internal void OnLayoutChanged(object sender, TextViewLayoutChangedEventArgs e)
-        {
-        }
+        //internal void OnLayoutChanged(object sender, TextViewLayoutChangedEventArgs e) { }
 
         internal void Reset()
         {
@@ -719,9 +743,9 @@ namespace PeasyMotion
 
                     j.labelAdornment?.UpdateView(labelRemainingMotionSubstr, this.jumpLabelCachedSetupParams);
 
-                    //TODO: Stabilize tab caption, keeping it same width as before!!!!!! 
+                    //Stabilize tab caption, keeping it same width as before:
                     //      Best results with fixed width fonts in Tools->Fonts..->Environment
-                    // replace parts of document caption with label & decor, trying to 
+                    // replace parts of document caption with label & decor(space char), trying to 
                     //preserve same tab caption width!
                     j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
                         j.vanillaTabCaption,

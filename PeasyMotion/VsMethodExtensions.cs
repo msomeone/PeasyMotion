@@ -51,7 +51,6 @@ namespace PeasyMotion
         public static void RemoveJumpLabelFromDocumentWindowFrameCaption(this IVsWindowFrame wf, string vanillaTabCaption)
         {
             wf.SetProperty((int)VsFramePropID.OverrideCaption, null);
-            //wf.SetProperty((int)VsFramePropID.Caption, vanillaTabCaption); //TODO: checl if we really need this
         }
 
         public static Result<IVsWindowFrame> GetWindowFrame(this IVsTextView textView)
