@@ -331,6 +331,7 @@ namespace PeasyMotion
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListener(vsTextView, wpfTextView);
+            wpfTextView.LostAggregateFocus += OnTextViewFocusLost;
 
             #if MEASUREEXECTIME
             watch.Stop();
@@ -341,6 +342,14 @@ namespace PeasyMotion
                 Deactivate();
             }
         }
+
+        private void OnTextViewFocusLost(object sender, EventArgs e) {
+            if (adornmentMgr != null) {
+                adornmentMgr.view.LostAggregateFocus -= OnTextViewFocusLost;
+            }
+            this.Deactivate();
+        }
+
         private void TryDisableVsVim()
         {
             ThreadHelper.ThrowIfNotOnUIThread();

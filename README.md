@@ -4,7 +4,7 @@ PeasyMotion
 
 ![Animated demonstration](preview.gif)
 
-Implements "word-motion" mode ~same way as it is done in vim-easymotion.
+Implements "word-motion" mode ~same way as it is done in vim-easymotion + open documents navigation
 This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
@@ -19,6 +19,7 @@ commands available:
 * **Tools.InvokePeasyMotionTextSelect**
 * **Tools.InvokePeasyMotionLineJumpToWordBegining**
 * **Tools.InvokePeasyMotionLineJumpToWordEnding**
+* **Tools.InvokePeasyMotionJumpToDocumentTab**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
@@ -56,6 +57,9 @@ Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump 
 
 ## Jump to word begining or ending in current line
 Jump to word begining or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+
+## Jump to document tab
+Jump to any open document tab via Tools.InvokePeasyMotionJumpToDocumentTab
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.

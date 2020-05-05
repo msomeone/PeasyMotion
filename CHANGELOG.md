@@ -1,3 +1,9 @@
+### 1.4.2
+- Jump to open document tab via Tools.InvokePeasyMotionJumpToDocumentTa has been added
+- Fixed response on ';' presence in jump label
+- Jump label assignment algorithm fix: no more skipped candidates (i hope).
+- Autoload and warmup improved, leading to faster UI response on first command invocation
+
 ### 1.3.1
 - Moved Tools->Invoke * PeasyMotion*  commands into separate Tools->PeasyMotion submenu
 - Crash from uncaught exception during VsSettings initialization has been fixed

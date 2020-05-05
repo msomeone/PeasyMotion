@@ -31,13 +31,25 @@ namespace PeasyMotion
             return infoBarModel;
         }
         */
-        // 1.1.42
+        /* ~ 1.1.42
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! In-Line word jump (begin/end). Give it a try via Tools.PeasyMotionLineJumpToWordBegining or Tools.PeasyMotionLineJumpToWordEnding command.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
                 "https://github.com/msomeone/PeasyMotion#jump-to-word-begining-or-ending-in-current-line");
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+            return infoBarModel;
+        }
+        */
+        public override InfoBarModel getInfoBarModel() {
+            InfoBarTextSpan text = new InfoBarTextSpan(
+                "PeasyMotion: New mode has been added! Jump to document tab. Give it a try via Tools.InvokePeasyMotionJumpToDocumentTab.");
+            InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+                "https://github.com/msomeone/PeasyMotion#jump-to-document-tab");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
