@@ -384,8 +384,7 @@ namespace PeasyMotion
             ThreadHelper.ThrowIfNotOnUIThread();
             try {
                 Debug.WriteLine("Key pressed " + keyPressEventArgs.KeyChar);
-
-                if (keyPressEventArgs.KeyChar != '\0' && Char.IsLetter(keyPressEventArgs.KeyChar))
+                if (PeasyMotionEdAdornment.jumpLabelKeyArray.IndexOf(keyPressEventArgs.KeyChar) != -1)
                 {
                     if (null == accumulatedKeyChars)
                     {

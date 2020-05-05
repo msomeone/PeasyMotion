@@ -1,4 +1,5 @@
 ﻿#define MEASUREEXECTIME
+//#define DEBUG_LABEL_ALGO
 
 using System;
 using System.Linq;
@@ -123,6 +124,9 @@ namespace PeasyMotion
                     IVsWindowFrame windowFrame,
                     IVsTextView windowPrimaryTextView,
                     string vanillaTabCaption
+#if DEBUG_LABEL_ALGO
+                    , int textViewPosDbg
+#endif
                 )
             {
                 this.distanceToCursor = distanceToCursor;
@@ -132,6 +136,9 @@ namespace PeasyMotion
                 this.windowFrame = windowFrame;
                 this.windowPrimaryTextView = windowPrimaryTextView;
                 this.vanillaTabCaption = vanillaTabCaption;
+#if DEBUG_LABEL_ALGO
+                this.textViewPosDbg = textViewPosDbg;
+#endif
             }
 
             public int distanceToCursor {get; }
@@ -141,13 +148,16 @@ namespace PeasyMotion
             public IVsWindowFrame windowFrame {get; }
             public IVsTextView windowPrimaryTextView { get; }
             public string vanillaTabCaption { get; }
+#if DEBUG_LABEL_ALGO
+            public int textViewPosDbg { get; }
+#endif
         };
 
         private List<Jump> currentJumps = new List<Jump>();
         private List<Jump> inactiveJumps = new List<Jump>();
         public bool anyJumpsAvailable() => currentJumps.Count > 0;
 
-        const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
+        public const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
 
         private JumpMode jumpMode = JumpMode.InvalidMode;
         public JumpMode CurrentJumpMode { get { return jumpMode; } }
@@ -207,8 +217,8 @@ namespace PeasyMotion
 #if MEASUREEXECTIME
                 var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-                // sort jump words from closest to cursor to farthest
-                jumpWords.Sort((a, b) => -a.distanceToCursor.CompareTo(b.distanceToCursor));
+                // sort jump words from closest to cursor to farthest 
+                jumpWords.Sort((a, b) => +a.distanceToCursor.CompareTo(b.distanceToCursor));
 #if MEASUREEXECTIME
                 watch2.Stop();
                 Trace.WriteLine($"PeasyMotion Adornment sort words: {watch2.ElapsedMilliseconds} ms");
@@ -218,7 +228,7 @@ namespace PeasyMotion
 #if MEASUREEXECTIME
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-            _ = computeGroups(0, jumpWords.Count - 1, jumpLabelKeyArray, null, jumpWords);
+            _ = computeGroups(0, jumpWords.Count-1, (jumpLabelKeyArray), "", jumpWords);
 
 #if MEASUREEXECTIME
             watch3.Stop();
@@ -310,6 +320,10 @@ namespace PeasyMotion
                 // two functions - with adornmnents from textview and with smth else (doc tabs)
                 // for now, just skip loop after cheking jumpMode is DocTabs
             }
+#if DEBUG_LABEL_ALGO
+            int dbgLabelAlgo_TraceStart = i;
+            int dbgLabelAlgo_TraceEnd = lastPosition;
+#endif
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
@@ -341,6 +355,25 @@ namespace PeasyMotion
                     break;
                 }
                 candidateLabel = candidateLabel && (prevIsControl||((lastJumpPos + 2) < i));// make sure there is a lil bit of space between adornments
+#if DEBUG_LABEL_ALGO
+                string cvtChar(char c) {
+                    switch (c) {
+                    case '\r': return "<CR>"; case '\n': return "<LF>"; case '\t': return "<TAB>";
+                    case ' ': return "<SPC>"; case '\0': return "NULL"; default: break;
+                    } return new string(ch,1);
+                };
+                var dbgCh = cvtChar(ch); var dbgPrevCh = cvtChar(prevChar); var dbgNextCh = cvtChar(nextCh);
+                Trace.WriteLine(
+                        $"CAND={candidateLabel,5} POS={i,5} currentChar={dbgCh,5}({(int)ch,5}) isSep={curIsSeparator,5} isPunct={curIsPunctuation,5} "+
+                        $"IsLetOrDig={curIsLetterOrDigit,5} isCtrl={curIsControl} ||| "+
+                        $"prevChar={dbgPrevCh,5}({(int)prevChar,5}) isSep={prevIsSeparator,5} isPunct={prevIsPunctuation,5} "+
+                        $"IsLetOrDig={prevIsLetterOrDigit,5} isCtrl={prevIsControl} ||| "+
+                        $"nextChar={dbgNextCh,5}({(int)nextCh,5}) isSep={Char.IsSeparator(nextCh),5} "+ 
+                        $"isPunct={Char.IsPunctuation(nextCh),5} "+
+                        $"IsLetOrDig={Char.IsLetterOrDigit(nextCh),5} isCtrl={nextIsControl,5}" +
+                        $"(lastJumpPos+2)<i = {(lastJumpPos + 2) < i,5}"
+                    );
+#endif
 
                 if (candidateLabel)
                 {
@@ -355,9 +388,16 @@ namespace PeasyMotion
                             text : null,
                             windowFrame : null,
                             windowPrimaryTextView : null,
-                            vanillaTabCaption : null);
+                            vanillaTabCaption : null
+#if DEBUG_LABEL_ALGO
+                            ,textViewPosDbg : i
+#endif
+                        );
                         jumpWords.Add(jw);
                         lastJumpPos = i;
+#if DEBUG_LABEL_ALGO
+                        Trace.WriteLine($"POS={i,5} Adding candidate jump word");
+#endif
                     }
                 }
                 prevChar = ch;
@@ -428,6 +468,9 @@ namespace PeasyMotion
                     windowFrame : wf,
                     windowPrimaryTextView : wptv,
                     vanillaTabCaption : ce
+#if DEBUG_LABEL_ALGO
+                    , textViewPosDbg : wfi
+#endif
                 );
                 jumpWords.Add(jw);
             }
@@ -545,7 +588,7 @@ namespace PeasyMotion
 
             Dictionary<char, JumpNode> groups = new Dictionary<char, JumpNode>();
 
-            var keys = Reverse(keys0);
+            var keys = keys0; //Reverse(keys0);
 
             var keyCounts = new int[keyCount];
             var keyCountsKeys = new Dictionary<char, int>(keyCount);
@@ -579,26 +622,27 @@ namespace PeasyMotion
             }
 
             var k = 0;
-            var keyIndex = 0;
+            var keyIndex = 0; 
+            Array.Reverse(keyCounts);
             foreach (int KeyCount2 in keyCounts)
             {
                 if (KeyCount2 > 1)
                 {
-                    groups[keys0[keyIndex]] = new JumpNode()
+                    groups[keys[keyIndex]] = new JumpNode()
                     {
                         jumpWordIndex = -1,
-                        childrenNodes = computeGroups(wordStartIndex + k, wordStartIndex + k + KeyCount2 - 1 - 1, keys0, 
-                            prefix!=null ? (prefix + keys0[keyIndex]) : ""+keys0[keyIndex], jumpWords )
+                        childrenNodes = computeGroups(wordStartIndex + k, wordStartIndex + k + KeyCount2 - 1, Reverse(string.Copy(keys)), 
+                            prefix + keys[keyIndex], jumpWords )
                     };
                 }
                 else if (KeyCount2 == 1)
                 {
-                    groups[keys0[keyIndex]] = new JumpNode() {
+                    groups[keys[keyIndex]] = new JumpNode() {
                         jumpWordIndex = wordStartIndex + k,
                         childrenNodes = null
                     };
                     var jw = jumpWords[wordStartIndex + k];
-                    string jumpLabel = prefix + keys0[keyIndex];
+                    string jumpLabel = prefix + keys[keyIndex];
 
                     JumpLabelUserControl adornment = null;
                     if (jw.windowFrame == null)  // winframe=null => regular textview navigation.
@@ -625,6 +669,10 @@ namespace PeasyMotion
                         }
 #endif
                         this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, JumpLabelAdornmentRemovedCallback);
+#if DEBUG_LABEL_ALGO
+                        Trace.WriteLine($"POS={jw.textViewPosDbg,5} Adding jumplabel adornment");
+#endif
+
 #if MEASUREEXECTIME
                         adornmentCreateStopwatch.Stop();
 #endif
