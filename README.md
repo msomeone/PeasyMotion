@@ -3,7 +3,7 @@ PeasyMotion
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
 ![Animated demonstration](preview.gif)
-Document tabs
+
 Implements "word-motion" mode ~same way as it is done in vim-easymotion and 
 Jump to open document via jump label combo.
 This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
