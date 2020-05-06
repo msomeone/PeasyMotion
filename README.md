@@ -3,7 +3,7 @@ PeasyMotion
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
 ![Animated demonstration](preview.gif)
-
+Document tabs
 Implements "word-motion" mode ~same way as it is done in vim-easymotion and 
 Jump to open document via jump label combo.
 This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
@@ -42,7 +42,7 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 "No more 'i' quirks for ViEmu!!
 "VsVim and ViEmu are disabled until PeasyMotion finishes
 
-"Whole viewport jump-to-word begining mode:
+"Whole viewport jump-to-word beginning mode:
 nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 
 "Select text from current caret position to desired jumplabel (fwd and reverse directions supported)
