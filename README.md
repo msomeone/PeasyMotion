@@ -48,7 +48,7 @@ nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 "Select text from current caret position to desired jumplabel (fwd and reverse directions supported)
 nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
 
-"Jump to word begining in current line
+"Jump to word beginning in current line
 nmap zw gS:vsc Tools.InvokePeasyMotionLineJumpToWordBegining<CR>
 "Jump to word ending in current line
 nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
@@ -59,8 +59,8 @@ nmap ;w gS:vsc Tools.InvokePeasyMotionJumpToDocumentTab<CR>
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
 
-## Jump to word begining or ending in current line
-Jump to word begining or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+## Jump to word beginning or ending in current line
+Jump to word beginning  or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
 
 ## Jump to document tab
 Jump to any open document tab via Tools.InvokePeasyMotionJumpToDocumentTab
