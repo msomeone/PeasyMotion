@@ -1,4 +1,4 @@
-PeasyMotion
+PeasyMotion (doc tab & code navigation)
 ===
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
