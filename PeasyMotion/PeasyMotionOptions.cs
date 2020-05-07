@@ -127,7 +127,7 @@ sealed class ColorInfo
 
 internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 {
-    internal const string _PkgVersion = "1.4.57";
+    internal const string _PkgVersion = "1.4.61";
     public static string getCurrentVersion() { return _PkgVersion; }
 
     private static readonly ColorKey s_jumpLabelFirstMotionColorBg = ColorKey.Background(JumpLabelFirstMotionFormatDef.FMT_NAME);
@@ -269,8 +269,52 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     [DefaultValue(0)]
     public int caretPositionSensivity { get; set; } = 0;
 
-
-
+    public const string DefaultAllowedKeys = "asdghklqwertyuiopzxcvbnmfj;";
+    private string _allowedJumpKeys = DefaultAllowedKeys;
+    [Category("General")]
+    [DisplayName("Allowed jump label characters")]
+    [Description("Default = \"asdghklqwertyuiopzxcvbnmfj;\" | " + 
+                 "Set field empty to reset to defaults. Beware - characters order affects ergonomics!\n" +
+                 "Chars must be unique among list. Allowed jump label characters: " +
+                 "lowercase letters only, numbers and punctuation allowed.")]
+    [DefaultValue(DefaultAllowedKeys)]
+    public string AllowedJumpKeys{ 
+        get { return _allowedJumpKeys; }
+        set{
+            bool AllCharsUnique(string s) {
+                bool[] c = new bool[256];
+                Array.Clear(c, 0, c.Length);
+                for (int i = 0; i < s.Length; i++) {
+                    if (c[(int)s[i]]) return false;
+                    c[(int)s[i]] = true;
+                }
+                return true;
+            }
+            bool valid = true;
+            if (!AllCharsUnique(value)) {
+                valid = false;
+            }
+            string vv = "";
+            if (value.Length < 2) {
+                _allowedJumpKeys = DefaultAllowedKeys;
+                valid = false;
+            }
+            for (int i = 0; i < value.Length; i++) {
+                char c = value[i];
+                if (!Char.IsLetterOrDigit(c) && !Char.IsPunctuation(c)) {
+                    valid = false; break;
+                }
+                if (Char.IsLetter(c) && !Char.IsLower(c)) {
+                    valid = false; break;
+                }
+                vv += c;
+            }
+            if (valid) {
+                _allowedJumpKeys = vv;
+            }
+        }
+    }
+    
     private String jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
     [Category("General")]
     [DisplayName("Fetch 'first motion' jump label colors from")]

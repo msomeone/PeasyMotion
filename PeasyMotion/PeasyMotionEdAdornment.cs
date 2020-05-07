@@ -64,7 +64,8 @@ namespace PeasyMotion
         SelectTextJump,
         LineJumpToWordBegining,
         LineJumpToWordEnding,
-        VisibleDocuments
+        VisibleDocuments//,
+        //LineJump
     }
 
 
@@ -157,7 +158,7 @@ namespace PeasyMotion
         private List<Jump> inactiveJumps = new List<Jump>();
         public bool anyJumpsAvailable() => currentJumps.Count > 0;
 
-        public const string jumpLabelKeyArray = "asdghklqwertyuiopzxcvbnmfj;";
+        public string jumpLabelKeyArray = null;
 
         private JumpMode jumpMode = JumpMode.InvalidMode;
         public JumpMode CurrentJumpMode { get { return jumpMode; } }
@@ -171,6 +172,7 @@ namespace PeasyMotion
         /// <param name="view">Text view to create the adornment for</param>
         public PeasyMotionEdAdornment(IVsTextView vsTextView, IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
         {
+            this.jumpLabelKeyArray = GeneralOptions.Instance.AllowedJumpKeys;
 #if MEASUREEXECTIME
             var watch0 = System.Diagnostics.Stopwatch.StartNew();
 #endif
@@ -312,6 +314,7 @@ namespace PeasyMotion
             SnapshotPoint nextPoint = currentPoint; 
             int i = startPoint.Position;
             int lastPosition = Math.Max(endPoint.Position-1, 0);
+            //int prevLineIndex = 
             if (startPoint.Position == lastPosition) {
                 i = lastPosition + 2; // just skip the loop. noob way :D 
             }
@@ -355,6 +358,9 @@ namespace PeasyMotion
                     break;
                 }
                 candidateLabel = candidateLabel && (prevIsControl||((lastJumpPos + 2) < i));// make sure there is a lil bit of space between adornments
+                //if (jumpMode == JumpMode.LineJump) {
+                    
+                //}
 #if DEBUG_LABEL_ALGO
                 string cvtChar(char c) {
                     switch (c) {

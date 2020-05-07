@@ -46,7 +46,7 @@ namespace PeasyMotion
         */
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan(
-                "PeasyMotion: New mode has been added! Jump to document tab. Give it a try via Tools.InvokePeasyMotionJumpToDocumentTab.");
+                "PeasyMotion: New mode has been added! Jump to document tab. Give it a try via Tools.InvokePeasyMotionJumpToDocumentTab. New option: one can set allowed characters to be used in jump labels.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
                 "https://github.com/msomeone/PeasyMotion#jump-to-document-tab");
