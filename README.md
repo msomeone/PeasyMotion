@@ -35,6 +35,10 @@ Just invoke PeasyMotion and goto **Tools**->**Options** and adjust style with li
 When 'Color source' options is not equal to **PeasyMotionJumpLabel****Motion**, one can sync label color style to other classification items from **Tools**->**Options**->**Fonts And Colors**->**Text Editor**.
 When 'Color source' is equal to PeasyMotionJumpLabel****Motion one can configure classification style manually trough **Tools**->**Options**->**PeasyMotion** or **Tools**->**Options**->**Fonts And Colors**->**Text Editor**->**'PeasyMotion **** Motion Jump label color'**.
 
+## Assign allowed jump label characters 
+One can assign allowed jump label characters through **Tools**->**Options**->**PeasyMotion options**->**Allowed jump label characters**
+If one observes any kind of unexpected behaviour when pressing certain key/labels during motion, there is an option to replace/remove unwanted characters from list. Beware that order of characters in this options affects ergonomics of jump-motions. Lowercase letters, digits and punctuation symbols are all valid jump label characters.
+
 ## Compatibility with other plugins
 VsVim and ViEmu
 just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
