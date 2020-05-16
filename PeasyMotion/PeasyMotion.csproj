@@ -76,6 +76,9 @@
     <Compile Include="VsSettings.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CHANGELOG.md" />
+    <None Include="CONTRIBUTING.md" />
+    <None Include="README.md" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

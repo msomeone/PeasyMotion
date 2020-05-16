@@ -296,7 +296,7 @@ namespace PeasyMotion
             }
 
             // collect words and required properties in visible text
-            char prevChar = '\0';
+            //char prevChar = '\0';
             var startPoint = this.view.TextViewLines.FirstVisibleLine.Start;
             var endPoint = this.view.TextViewLines.LastVisibleLine.End;
             if (lineJumpToWordBeginOrEnd_isActive) {
@@ -306,30 +306,36 @@ namespace PeasyMotion
 
             var snapshot = startPoint.Snapshot;
             int lastJumpPos = -100;
-            bool prevIsSeparator = Char.IsSeparator(prevChar);
-            bool prevIsPunctuation = Char.IsPunctuation(prevChar);
-            bool prevIsLetterOrDigit = Char.IsLetterOrDigit(prevChar);
-            bool prevIsControl = Char.IsControl(prevChar);
+            char tmpCh = '\0';
+            bool prevIsSeparator = Char.IsSeparator(tmpCh);
+            bool prevIsPunctuation = Char.IsPunctuation(tmpCh);
+            bool prevIsLetterOrDigit = Char.IsLetterOrDigit(tmpCh);
+            bool prevIsControl = Char.IsControl(tmpCh);
             SnapshotPoint currentPoint = new SnapshotPoint(snapshot, startPoint.Position);
             SnapshotPoint nextPoint = currentPoint; 
-            int i = startPoint.Position;
+            SnapshotPoint prevPoint = currentPoint; 
+            int firstPosition = startPoint.Position;
+            int i = firstPosition;
             int lastPosition = Math.Max(endPoint.Position-1, 0);
-            //int prevLineIndex = 
             if (startPoint.Position == lastPosition) {
                 i = lastPosition + 2; // just skip the loop. noob way :D 
             }
-            if (jumpMode == JumpMode.VisibleDocuments) {
-                i = lastPosition + 2; //TODO: DECIDE LATER IF WE GONA SPLIT  jumpWord list fill into 
-                // two functions - with adornmnents from textview and with smth else (doc tabs)
-                // for now, just skip loop after cheking jumpMode is DocTabs
-            }
+            
+            // EOL convention reminder | Windows = CR LF \r\n | Unix = LF \n | Mac = CR \r
 #if DEBUG_LABEL_ALGO
             int dbgLabelAlgo_TraceStart = i;
             int dbgLabelAlgo_TraceEnd = lastPosition;
 #endif
+            int EOL_charCount = 0; // 0 - uninitalized
+            bool EOL_Windows = false;
+            const int MinimumDistanceBetweenLabels = 3; const char CR ='\r'; const char LF ='\n';
+
+            bool prevNewLine = false;
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
+                prevPoint = new SnapshotPoint(snapshot, Math.Max(i-1, 0));
+                var prevChar = prevPoint.GetChar();
                 nextPoint = new SnapshotPoint(snapshot, Math.Min(i+1, lastPosition));
                 var nextCh = nextPoint.GetChar();
                 bool curIsSeparator = Char.IsSeparator(ch);
@@ -337,6 +343,15 @@ namespace PeasyMotion
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
                 bool curIsControl = Char.IsControl(ch);
                 bool nextIsControl = Char.IsControl(nextCh);
+                if ((EOL_charCount == 0) && curIsControl) {
+                    if ((prevChar == CR) && (ch == LF)) { EOL_charCount = 2; EOL_Windows = true;}
+                    else if ((ch == CR) && (nextCh == LF)) { EOL_charCount = 2; EOL_Windows = true;}
+                    else if ((ch == CR) && !prevIsControl && ((nextCh == CR) || !nextIsControl)) { EOL_charCount = 1; }
+                    else if ((ch == LF) && !prevIsControl && ((nextCh == LF) || !nextIsControl)) { EOL_charCount = 1; }
+                    Trace.WriteLine($"EOL chars count = {EOL_charCount}");
+                }
+                bool newLine = ((EOL_charCount == 2) && ((prevChar == CR) && (ch == LF))) ||
+                               ((EOL_charCount == 1) && ((ch == LF) || (ch == CR    )))  ;
 
                 bool candidateLabel = false;
                 //TODO: anything faster and simpler ? will regex be faster? maybe symbols 
@@ -352,32 +367,43 @@ namespace PeasyMotion
                     }
                     break;
                 default:
-                    candidateLabel = (curIsLetterOrDigit && !prevIsLetterOrDigit) ||
-                                     (!curIsControl && nextIsControl) ||
-                                     (!prevIsLetterOrDigit && curIsControl && nextIsControl);
+                    candidateLabel = 
+                        (curIsLetterOrDigit && !prevIsLetterOrDigit) || 
+                        ((prevIsControl || prevNewLine) && newLine) ||
+                        ((!prevIsControl && !prevNewLine) && !prevIsLetterOrDigit && newLine);
+                        //(!curIsControl && nextIsControl) ||
+                        //((prevChar!= ' ') && !prevIsLetterOrDigit && curIsControl && nextIsControl);
                     break;
                 }
-                candidateLabel = candidateLabel && (prevIsControl||((lastJumpPos + 2) < i));// make sure there is a lil bit of space between adornments
+                bool distanceToPrevLabelAcceptable = (lastJumpPos + MinimumDistanceBetweenLabels) < i;
+                // do not duplicate jump label on CRLF, place on CR only
+                //distanceToPrevLabelAcceptable &= (!EOL_Windows) || (EOL_Windows && (ch == LF));
+                distanceToPrevLabelAcceptable = distanceToPrevLabelAcceptable || (prevNewLine && newLine);
+
+                candidateLabel = candidateLabel && ((distanceToPrevLabelAcceptable));// make sure there is a lil bit of space between adornments
+
                 //if (jumpMode == JumpMode.LineJump) {
                     
-                //}
+                //} 
 #if DEBUG_LABEL_ALGO
                 string cvtChar(char c) {
+                    if (ch == '\0') return new string('l', 1);
                     switch (c) {
                     case '\r': return "<CR>"; case '\n': return "<LF>"; case '\t': return "<TAB>";
                     case ' ': return "<SPC>"; case '\0': return "NULL"; default: break;
-                    } return new string(ch,1);
+                    } return new string(c,1);
                 };
                 var dbgCh = cvtChar(ch); var dbgPrevCh = cvtChar(prevChar); var dbgNextCh = cvtChar(nextCh);
                 Trace.WriteLine(
                         $"CAND={candidateLabel,5} POS={i,5} currentChar={dbgCh,5}({(int)ch,5}) isSep={curIsSeparator,5} isPunct={curIsPunctuation,5} "+
                         $"IsLetOrDig={curIsLetterOrDigit,5} isCtrl={curIsControl} ||| "+
-                        $"prevChar={dbgPrevCh,5}({(int)prevChar,5}) isSep={prevIsSeparator,5} isPunct={prevIsPunctuation,5} "+
+                        $" prevChar={dbgPrevCh,5}({(int)prevChar,5}) isSep={prevIsSeparator,5} isPunct={prevIsPunctuation,5} "+
                         $"IsLetOrDig={prevIsLetterOrDigit,5} isCtrl={prevIsControl} ||| "+
                         $"nextChar={dbgNextCh,5}({(int)nextCh,5}) isSep={Char.IsSeparator(nextCh),5} "+ 
                         $"isPunct={Char.IsPunctuation(nextCh),5} "+
                         $"IsLetOrDig={Char.IsLetterOrDigit(nextCh),5} isCtrl={nextIsControl,5}" +
-                        $"(lastJumpPos+2)<i = {(lastJumpPos + 2) < i,5}"
+                        $"(lastJumpPos+MD)<i = {(lastJumpPos + MinimumDistanceBetweenLabels) < i,5} " +
+                        $"lastJumpPos = {lastJumpPos}"
                     );
 #endif
 
@@ -402,17 +428,20 @@ namespace PeasyMotion
                         jumpWords.Add(jw);
                         lastJumpPos = i;
 #if DEBUG_LABEL_ALGO
-                        Trace.WriteLine($"POS={i,5} Adding candidate jump word");
+                        Trace.WriteLine($"POS={i,5} Adding candidate jump word, lastJumpPos = {lastJumpPos}");
 #endif
+                        // reset lastJumpPos index if newline encountered, so we wont skip label on line border
+                        lastJumpPos = newLine ? -100 : lastJumpPos;
                     }
                 }
-                prevChar = ch;
                 prevIsSeparator = curIsSeparator;
                 prevIsPunctuation = curIsPunctuation;
                 prevIsLetterOrDigit = curIsLetterOrDigit;
                 prevIsControl = curIsControl;
 
                 currentPoint = nextPoint;
+                prevNewLine = newLine;
+
             }
 #if MEASUREEXECTIME
             watch1.Stop();
