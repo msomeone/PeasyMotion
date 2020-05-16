@@ -1,4 +1,4 @@
-PeasyMotion
+PeasyMotion (doc tab & code navigation)
 ===
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
@@ -34,6 +34,10 @@ One can configure jump label colors, with live preview also. Color options for '
 Just invoke PeasyMotion and goto **Tools**->**Options** and adjust style with live preview.
 When 'Color source' options is not equal to **PeasyMotionJumpLabel****Motion**, one can sync label color style to other classification items from **Tools**->**Options**->**Fonts And Colors**->**Text Editor**.
 When 'Color source' is equal to PeasyMotionJumpLabel****Motion one can configure classification style manually trough **Tools**->**Options**->**PeasyMotion** or **Tools**->**Options**->**Fonts And Colors**->**Text Editor**->**'PeasyMotion **** Motion Jump label color'**.
+
+## Assign allowed jump label characters 
+One can assign allowed jump label characters through **Tools**->**Options**->**PeasyMotion options**->**Allowed jump label characters**
+If one observes any kind of unexpected behaviour when pressing certain key/labels during motion, there is an option to replace/remove unwanted characters from list. Beware that order of characters in this options affects ergonomics of jump-motions. Lowercase letters, digits and punctuation symbols are all valid jump label characters.
 
 ## Compatibility with other plugins
 VsVim and ViEmu
