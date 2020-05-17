@@ -21,6 +21,7 @@ commands available:
 * **Tools.InvokePeasyMotionLineJumpToWordBegining**
 * **Tools.InvokePeasyMotionLineJumpToWordEnding**
 * **Tools.InvokePeasyMotionJumpToDocumentTab**
+* **Tools.InvokePeasyMotionJumpToLineBegining**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
@@ -43,7 +44,7 @@ If one observes any kind of unexpected behaviour when pressing certain key/label
 VsVim and ViEmu
 just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 ```vimscript
-"No more 'i' quirks for ViEmu!!
+" gS prefix is added for ViEmu, no use for VsVim AFAIK.
 "VsVim and ViEmu are disabled until PeasyMotion finishes
 
 "Whole viewport jump-to-word beginning mode:
@@ -59,6 +60,10 @@ nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
 
 "Jump to any open document tab
 nmap ;w gS:vsc Tools.InvokePeasyMotionJumpToDocumentTab<CR>
+
+"Jump to line begining:
+nmap ;l gS:vsc Tools.InvokePeasyMotionJumpToLineBegining<CR>
+
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
@@ -68,6 +73,12 @@ Jump to word beginning  or ending in current line via Tools.InvokePeasyMotionLin
 
 ## Jump to document tab
 Jump to any open document tab via Tools.InvokePeasyMotionJumpToDocumentTab
+The only way to prevent UI 'jumping' when tabs caption are changed is to use monospaced font for Tools->Fonts And Colors -> show settings for Environment. This will help making tab captions keep stable.
+In case of non-monospaced fonts in 'Environment' - when jump labels are assigned to document tab title -> title's width can change it's width (get shorter or longer, depends on particular characters combination in caption). When document tab title changes, the re-adjustment of tab document title positions happen -> jump labels and whole doc tab title shifts either side. When user's gaze was fixed on the jump label or document tab title user will lose his 'point of focus'/ gaze point.
+When monospaced fonts are used in environment -> each character lower/upper of any kind occupies strictly the same space in title. This prevents any changes/adjustments to captions widths/doc title positions in combination with fact, that jump label replaces part of document name (to help with keeping document title the same width as it was).
+
+## Jump to begining of line
+Jump to begining of any visible line via Tools.InvokePeasyMotionJumpToLineBegining
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.

@@ -1,3 +1,8 @@
+### 1.5.1
+- Jump to line begining added via Tools.InvokePeasyMotionJumpToLineBegining
+- Improved EOL convention handling
+- Improved close jump labels readability
+
 ### 1.4.2
 - Jump to open document tab via Tools.InvokePeasyMotionJumpToDocumentTa has been added
 - Fixed response on ';' presence in jump label
