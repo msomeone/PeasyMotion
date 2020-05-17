@@ -34,6 +34,7 @@ namespace PeasyMotion
         public const int PeasyMotionLineJumpToWordBeginingId = 0x0102;
         public const int PeasyMotionLineJumpToWordEndingId = 0x0103;
         public const int PeasyMotionJumpToDocumentTab = 0x0104;
+        public const int PeasyMotionJumpToLineBegining = 0x0105;
         public const int bmpHighlightText = 0x0001;
     }
 }

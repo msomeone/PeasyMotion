@@ -44,12 +44,25 @@ namespace PeasyMotion
             return infoBarModel;
         }
         */
+        /* ~1.4.60
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! Jump to document tab. Give it a try via Tools.InvokePeasyMotionJumpToDocumentTab. New option: one can set allowed characters to be used in jump labels.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
                 "https://github.com/msomeone/PeasyMotion#jump-to-document-tab");
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+            return infoBarModel;
+        }
+        */
+        public override InfoBarModel getInfoBarModel() {
+            InfoBarTextSpan text = new InfoBarTextSpan(
+                "PeasyMotion: New mode has been added! Jump to line begining. Give it a try via Tools.InvokePeasyMotionJumpToLineBegining.");
+            InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+                "https://github.com/msomeone/PeasyMotion#jump-to-begining-of-line");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);

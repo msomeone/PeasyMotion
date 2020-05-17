@@ -64,8 +64,8 @@ namespace PeasyMotion
         SelectTextJump,
         LineJumpToWordBegining,
         LineJumpToWordEnding,
-        VisibleDocuments//,
-        //LineJump
+        VisibleDocuments,
+        LineBeginingJump
     }
 
 
@@ -331,6 +331,10 @@ namespace PeasyMotion
             const int MinimumDistanceBetweenLabels = 3; const char CR ='\r'; const char LF ='\n';
 
             bool prevNewLine = false;
+            int jumpPosModifierBase = 0;
+            if (jumpMode == JumpMode.LineBeginingJump) {
+                jumpPosModifierBase = 1; // use next pos as label pos for LineBeginingJump
+            }
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
@@ -352,7 +356,7 @@ namespace PeasyMotion
                 }
                 bool newLine = ((EOL_charCount == 2) && ((prevChar == CR) && (ch == LF))) ||
                                ((EOL_charCount == 1) && ((ch == LF) || (ch == CR    )))  ;
-
+                int jumpPosModifier = jumpPosModifierBase;
                 bool candidateLabel = false;
                 //TODO: anything faster and simpler ? will regex be faster? maybe symbols 
                 // LUT with BITS (IsSep,IsPunct, etc as bits in INT record of LUT?)
@@ -364,6 +368,13 @@ namespace PeasyMotion
                     {
                         bool nextIsLetterOrDigit = Char.IsLetterOrDigit(nextCh);
                         candidateLabel = curIsLetterOrDigit && !nextIsLetterOrDigit;
+                    }
+                    break;
+                case JumpMode.LineBeginingJump: 
+                    {
+                        bool firstLine = i == firstPosition;
+                        candidateLabel = (newLine) || firstLine;
+                        jumpPosModifier = firstLine ? 0 : jumpPosModifier;
                     }
                     break;
                 default:
@@ -409,12 +420,13 @@ namespace PeasyMotion
 
                 if (candidateLabel)
                 {
-                    SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(i, i + 1));
+                    int jumpPosModified = jumpPosModifier + i;
+                    SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(jumpPosModified, jumpPosModified + 1));
                     Geometry geometry = this.view.TextViewLines.GetTextMarkerGeometry(firstCharSpan);
                     if (geometry != null)
                     {
                         var jw = new JumpWord(
-                            distanceToCursor : Math.Abs(i - cursorIndex),
+                            distanceToCursor : Math.Abs(jumpPosModified - cursorIndex),
                             adornmentBounds : geometry.Bounds,
                             span : firstCharSpan,
                             text : null,
@@ -422,11 +434,11 @@ namespace PeasyMotion
                             windowPrimaryTextView : null,
                             vanillaTabCaption : null
 #if DEBUG_LABEL_ALGO
-                            ,textViewPosDbg : i
+                            ,textViewPosDbg : jumpPosModified
 #endif
                         );
                         jumpWords.Add(jw);
-                        lastJumpPos = i;
+                        lastJumpPos = jumpPosModified;
 #if DEBUG_LABEL_ALGO
                         Trace.WriteLine($"POS={i,5} Adding candidate jump word, lastJumpPos = {lastJumpPos}");
 #endif

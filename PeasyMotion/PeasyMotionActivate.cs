@@ -141,6 +141,10 @@ namespace PeasyMotion
             var jumpToDocTabMenuItem = new MenuCommand(this.ExecuteJumpToDocTab, jumpToDocTabMenuCommandID);
             commandService.AddCommand(jumpToDocTabMenuItem);
 
+            var jumpToLineBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionJumpToLineBegining);
+            var jumpToLineBeginingMenuItem = new MenuCommand(this.ExecuteJumpToLineBegining, jumpToLineBeginingMenuCommandID);
+            commandService.AddCommand(jumpToLineBeginingMenuItem);
         }
 
         /// <summary>
@@ -244,17 +248,22 @@ namespace PeasyMotion
         private void ExecuteLineJumpToWordBegining(object o, EventArgs e)
         {
             ExecuteCommonJumpCode(JumpMode.LineJumpToWordBegining);
-        }       
+        }
 
         private void ExecuteLineJumpToWordEnding(object o, EventArgs e)
         {
             ExecuteCommonJumpCode(JumpMode.LineJumpToWordEnding);
-        }       
+        }
 
         private void ExecuteJumpToDocTab(object o, EventArgs e)
         {
             ExecuteCommonJumpCode(JumpMode.VisibleDocuments);
-        }       
+        }
+
+        private void ExecuteJumpToLineBegining(object o, EventArgs e)
+        {
+            ExecuteCommonJumpCode(JumpMode.LineBeginingJump);
+        }
 
         private void ShowNotificationsIfAny() 
         {

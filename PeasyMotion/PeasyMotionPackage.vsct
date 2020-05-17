@@ -98,9 +98,15 @@
         <Strings>
           <ButtonText>Invoke PeasyMotion Jump To Document Tab</ButtonText>
         </Strings>
+          
       </Button>
-        
-        
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToLineBegining" priority="0x0103" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion Jump To Line Begining</ButtonText>
+        </Strings>
+      </Button>
         
     </Buttons>
 
@@ -121,6 +127,7 @@
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordBeginingId" editor="guidVSStd97" mod1="CONTROL ALT" key1="K"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionLineJumpToWordEndingId" editor="guidVSStd97" mod1="CONTROL ALT" key1="L"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToDocumentTab" editor="guidVSStd97" mod1="CONTROL ALT" key1="T"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToLineBegining" editor="guidVSStd97" mod1="CONTROL ALT" key1="J"/>
   </KeyBindings>
 
   <Symbols>
@@ -138,6 +145,7 @@
       <IDSymbol name="PeasyMotionLineJumpToWordBeginingId" value="0x0102" />
       <IDSymbol name="PeasyMotionLineJumpToWordEndingId" value="0x0103" />
       <IDSymbol name="PeasyMotionJumpToDocumentTab" value="0x0104" />
+      <IDSymbol name="PeasyMotionJumpToLineBegining" value="0x0105" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{3e6d0d87-f85a-45e7-bf87-a8f3a94c781b}" >
