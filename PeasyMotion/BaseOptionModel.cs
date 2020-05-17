@@ -96,10 +96,24 @@ namespace PeasyMotion.Options
 
 #if DEBUG_OPTION_VALUES_LOAD_SAVE
             Debug.WriteLine($"LoadAsync<{typeof(T).Name}>()");
+            Debug.WriteLine($"GetPropertyCount = {settingsStore.GetPropertyCount(CollectionName)}");
+            Debug.WriteLine($"GetPropertyCount = {settingsStore.GetPropertyCount(CollectionName)}");
+            //var pnv = settingsStore.GetPropertyNamesAndValues(CollectionName);
+            var pn = settingsStore.GetPropertyNames(CollectionName);
+            foreach(var n in pn) {
+                Debug.WriteLine($"Property: Name={n} Type = {settingsStore.GetPropertyType(CollectionName, n).ToString()}");
+            }
 #endif
             var propertiesToSerialize = GetOptionProperties();
             foreach (PropertyInfo property in propertiesToSerialize)
             {
+                if (!settingsStore.PropertyExists(CollectionName, property.Name)) {
+#if DEBUG_OPTION_VALUES_LOAD_SAVE
+                    Debug.WriteLine($"Skipping property {property.Name}. Not found in settings store");
+#endif
+                    property.SetValue(this, property.GetValue(this));
+                    continue;
+                }
                 try
                 {
                     string serializedProp = settingsStore.GetString(CollectionName, property.Name);
@@ -111,7 +125,7 @@ namespace PeasyMotion.Options
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.Write(ex);
+                    System.Diagnostics.Debug.WriteLine(ex);
                 }
             }
 #if DEBUG_OPTION_VALUES_LOAD_SAVE

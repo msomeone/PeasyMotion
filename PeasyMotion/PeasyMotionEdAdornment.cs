@@ -178,7 +178,7 @@ namespace PeasyMotion
 #endif
             jumpMode = jumpMode_;
 
-            var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.jumpLabelAssignmentAlgorithm;
+            var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.getJumpLabelAssignmentAlgorithm();
             var caretPositionSensivity = Math.Min(Int32.MaxValue >> 2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
 
             this.layer = view.GetAdornmentLayer("PeasyMotionEdAdornment");
@@ -273,7 +273,7 @@ namespace PeasyMotion
             int currentLineEndTextPos = currentTextPos; // used for line word b/e jump mode
 
             var cursorSnapshotPt = this.view.Caret.Position.BufferPosition;
-            int cursorIndex = 0;
+            int cursorIndex = this.view.TextViewLines.FirstVisibleLine.Start.Position;
             bool lineJumpToWordBeginOrEnd_isActive = (jumpMode == JumpMode.LineJumpToWordBegining) || (jumpMode == JumpMode.LineJumpToWordEnding);
             if ((JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm) || lineJumpToWordBeginOrEnd_isActive)
             {
@@ -352,10 +352,12 @@ namespace PeasyMotion
                     else if ((ch == CR) && (nextCh == LF)) { EOL_charCount = 2; EOL_Windows = true;}
                     else if ((ch == CR) && !prevIsControl && ((nextCh == CR) || !nextIsControl)) { EOL_charCount = 1; }
                     else if ((ch == LF) && !prevIsControl && ((nextCh == LF) || !nextIsControl)) { EOL_charCount = 1; }
+#if DEBUG_LABEL_ALGO
                     Trace.WriteLine($"EOL chars count = {EOL_charCount}");
+#endif
                 }
-                bool newLine = ((EOL_charCount == 2) && ((prevChar == CR) && (ch == LF))) ||
-                               ((EOL_charCount == 1) && ((ch == LF) || (ch == CR    )))  ;
+                bool newLine = ( EOL_Windows && ((prevChar == CR) && (ch == LF))) ||
+                               (!EOL_Windows && ((ch == LF) || (ch == CR    )))   ;
                 int jumpPosModifier = jumpPosModifierBase;
                 bool candidateLabel = false;
                 //TODO: anything faster and simpler ? will regex be faster? maybe symbols 

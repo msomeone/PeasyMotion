@@ -49,6 +49,55 @@ public enum JumpLabelAssignmentAlgorithm
     ViewportRelative
 }
 
+public class Enum2StrHelper<T> {
+    private static List<String> _s = new List<String>();
+    private static List<T> _e = new List<T>();
+    private static void init() {
+        foreach(T ev in(T[]) Enum.GetValues(typeof(T))) { _e.Add(ev); }
+        foreach(String en in Enum.GetNames(typeof(T))) { _s.Add(en); }
+    }
+
+    public static List<T> e
+    {
+        get {
+            if (_e.Count == 0) { init(); }
+            return _e;
+        }
+    }
+
+    public static List<String> s
+    {
+        get {
+            if (_s.Count == 0) { init(); }
+            return _s;
+        }
+    }
+    // teh noob way.
+    public static T convertToEnumVal(String str) {
+        var i = s.IndexOf(str);
+        return e[i != -1 ? i : 0];
+    }
+    public static String convertToStr(T v) {
+        var i = e.IndexOf(v);
+        return s[i != -1 ? i : 0];
+    }
+}
+
+// helps to avoid pkg assembly version dependency & exceptions when (de)serializing enums
+public class EnumValuesListConverter<EnumType> : StringConverter
+{
+    public override Boolean GetStandardValuesSupported(ITypeDescriptorContext context) { return true; }
+    public override Boolean GetStandardValuesExclusive(ITypeDescriptorContext context) { return true; }
+    public override TypeConverter.StandardValuesCollection GetStandardValues(ITypeDescriptorContext context) {
+        return new StandardValuesCollection( new List<string>( Enum2StrHelper<EnumType>.s ));
+    }
+}
+
+// TypeConverter workaround: if we use typeof(EnumValuesListConverter<T>) directly in TypeConvertor attribue declaration
+// then somehow dropdown list stops showing and we see text edit field instead.
+// Using inheritance (fuck it), we'are able to workaound the issue.
+public class JumpAlgoEnumValuesListConverter : EnumValuesListConverter<JumpLabelAssignmentAlgorithm> {}
+
 public class TextEditorFontsAndColorsItemsList 
 {
     private static List<string> _colorableItemsCached = new List<string>();
@@ -244,8 +293,8 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     }
 
 
-
-
+    private String _jumpLabelAssignmentAlgorithmStr = 
+            Enum2StrHelper<JumpLabelAssignmentAlgorithm>.convertToStr(JumpLabelAssignmentAlgorithm.CaretRelative);
     [Category("General")]
     [DisplayName("Jump label assignment algorithm")]
     [Description(
@@ -256,9 +305,16 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             "Jump labels will be reproducible for caret positions differing \u00B1sensivity chars.\n" +
             "- ViewportRelative - assign labels starting from text viewport top, ignoring caret position."
             )]
-    //[TypeConverter(typeof(EnumConverter))]
-    [DefaultValue(JumpLabelAssignmentAlgorithm.CaretRelative)]
-    public JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm { get; set; } = JumpLabelAssignmentAlgorithm.CaretRelative;
+    [DefaultValue("CaretRelative")]
+    [TypeConverter(typeof(JumpAlgoEnumValuesListConverter))]
+    public String jumpLabelAssignmentAlgorithmStr4{
+        get { return _jumpLabelAssignmentAlgorithmStr; }
+        set { _jumpLabelAssignmentAlgorithmStr = value; }
+    }
+
+    public JumpLabelAssignmentAlgorithm getJumpLabelAssignmentAlgorithm() {
+        return Enum2StrHelper<JumpLabelAssignmentAlgorithm>.convertToEnumVal(_jumpLabelAssignmentAlgorithmStr);
+    }
 
     [Category("General")]
     [DisplayName("Caret position sensivity")]
@@ -267,7 +323,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             "Jumplabels will be reproducible for caret positions differing \u00B1sensivity chars.\n"
             )]
     [DefaultValue(0)]
-    public int caretPositionSensivity { get; set; } = 0;
+    public int caretPositionSensivity { get; set; }
 
     public const string DefaultAllowedKeys = "asdghklqwertyuiopzxcvbnmfj;";
     private string _allowedJumpKeys = DefaultAllowedKeys;
@@ -317,7 +373,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     
     private String jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
     [Category("General")]
-    [DisplayName("Fetch 'first motion' jump label colors from")]
+    [DisplayName("Fetch 'First motion' jump label colors from")]
     [Description("Live preview available!\nJust iinvoke PeasyMotion and goto Tools->Options and adjust style with live preview.\n" +
                  "When is not equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME + " one can sync label color style to other classification items from Tools->Options->Fonts And Colors->Text Editor.\n" +
                  "When equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME + " one can configure classification style manually trough Tools->Options->PeasyMotion or\nTools->Options->Fonts And Colors->Text Editor->'PeasyMotion First Motion Jump label color'.")]

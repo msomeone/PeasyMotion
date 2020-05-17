@@ -59,7 +59,7 @@ namespace PeasyMotion
         */
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan(
-                "PeasyMotion: New mode has been added! Jump to line begining. Give it a try via Tools.InvokePeasyMotionJumpToLineBegining.");
+                "PeasyMotion: New mode has been added! Jump to line begining. Give it a try via Tools.InvokePeasyMotionJumpToLineBegining. Several bugfixes");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
                 "https://github.com/msomeone/PeasyMotion#jump-to-begining-of-line");
