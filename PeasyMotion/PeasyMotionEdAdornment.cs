@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Formatting;
@@ -257,6 +258,13 @@ namespace PeasyMotion
             }
         }
 
+        public void TraceLine(string message,
+                [CallerFilePath] string filePath = "",
+                [CallerLineNumber] int lineNumber = 0)
+        {
+            Trace.WriteLine($"{filePath}:{lineNumber} -> {message}");
+        }
+
         private void SetupJumpInsideTextViewMode(
                 List<JumpWord> jumpWords, 
                 JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm,
@@ -268,7 +276,7 @@ namespace PeasyMotion
 #endif
 
             int currentTextPos = this.view.TextViewLines.FirstVisibleLine.Start;
-            int lastTextPos = this.view.TextViewLines.LastVisibleLine.End;
+            int lastTextPos = this.view.TextViewLines.LastVisibleLine.EndIncludingLineBreak;
             int currentLineStartTextPos = currentTextPos; // used for line word b/e jump mode
             int currentLineEndTextPos = currentTextPos; // used for line word b/e jump mode
 
@@ -287,7 +295,7 @@ namespace PeasyMotion
                 if (lineJumpToWordBeginOrEnd_isActive) {
                     var currentLine = this.view.TextSnapshot.GetLineFromPosition(cursorIndex);
                     currentLineStartTextPos = currentTextPos = currentLine.Start;
-                    currentLineEndTextPos = lastTextPos = currentLine.End;
+                    currentLineEndTextPos = lastTextPos = currentLine.EndIncludingLineBreak;
                 }
 
                 // bin caret to virtual segments accroding to sensivity option, with sensivity=0 does nothing
@@ -298,7 +306,7 @@ namespace PeasyMotion
             // collect words and required properties in visible text
             //char prevChar = '\0';
             var startPoint = this.view.TextViewLines.FirstVisibleLine.Start;
-            var endPoint = this.view.TextViewLines.LastVisibleLine.End;
+            var endPoint = this.view.TextViewLines.LastVisibleLine.EndIncludingLineBreak;
             if (lineJumpToWordBeginOrEnd_isActive) {
                 startPoint = new SnapshotPoint(startPoint.Snapshot, currentLineStartTextPos);
                 endPoint = new SnapshotPoint(endPoint.Snapshot, currentLineEndTextPos);
@@ -316,7 +324,7 @@ namespace PeasyMotion
             SnapshotPoint prevPoint = currentPoint; 
             int firstPosition = startPoint.Position;
             int i = firstPosition;
-            int lastPosition = Math.Max(endPoint.Position-1, 0);
+            int lastPosition = Math.Max(endPoint.Position, 0);
             if (startPoint.Position == lastPosition) {
                 i = lastPosition + 2; // just skip the loop. noob way :D 
             }
@@ -338,10 +346,16 @@ namespace PeasyMotion
             for (; i <= lastPosition; i++)
             {
                 var ch = currentPoint.GetChar();
+                //TraceLine($"before prevpt new SnapshotPoint {i-1} <- pos | {lastPosition} | {i-1}");
                 prevPoint = new SnapshotPoint(snapshot, Math.Max(i-1, 0));
+                //TraceLine($"after prevpt new SnapshotPoint {i-1} <- pos | {lastPosition} | {i-1}");
+                //TraceLine($"{i} <- pos | {lastPosition} | {i+1}");
                 var prevChar = prevPoint.GetChar();
-                nextPoint = new SnapshotPoint(snapshot, Math.Min(i+1, lastPosition));
+                //TraceLine($"before new SnapshotPoint {i} <- pos | {lastPosition} | {i+1}");
+                nextPoint = new SnapshotPoint(snapshot, Math.Min(i+1, lastPosition-1));
+                //TraceLine($"after new SnapshotPoint {i} <- pos | {lastPosition} | {i+1}");
                 var nextCh = nextPoint.GetChar();
+                //TraceLine("nextCh");
                 bool curIsSeparator = Char.IsSeparator(ch);
                 bool curIsPunctuation = Char.IsPunctuation(ch);
                 bool curIsLetterOrDigit = Char.IsLetterOrDigit(ch);
@@ -375,7 +389,7 @@ namespace PeasyMotion
                 case JumpMode.LineBeginingJump: 
                     {
                         bool firstLine = i == firstPosition;
-                        candidateLabel = (newLine) || firstLine;
+                        candidateLabel = (newLine && (i < lastPosition-1)) || firstLine;
                         jumpPosModifier = firstLine ? 0 : jumpPosModifier;
                     }
                     break;
@@ -388,12 +402,13 @@ namespace PeasyMotion
                         //((prevChar!= ' ') && !prevIsLetterOrDigit && curIsControl && nextIsControl);
                     break;
                 }
-                bool distanceToPrevLabelAcceptable = (lastJumpPos + MinimumDistanceBetweenLabels) < i;
+                bool distanceToPrevLabelAcceptable = (lastJumpPos + jumpPosModifier + MinimumDistanceBetweenLabels) < i;
                 // do not duplicate jump label on CRLF, place on CR only
                 //distanceToPrevLabelAcceptable &= (!EOL_Windows) || (EOL_Windows && (ch == LF));
                 distanceToPrevLabelAcceptable = distanceToPrevLabelAcceptable || (prevNewLine && newLine);
 
                 candidateLabel = candidateLabel && ((distanceToPrevLabelAcceptable));// make sure there is a lil bit of space between adornments
+                candidateLabel = candidateLabel && (i < lastPosition);
 
                 //if (jumpMode == JumpMode.LineJump) {
                     
@@ -420,10 +435,16 @@ namespace PeasyMotion
                     );
 #endif
 
+                //TraceLine("if (candidateLabel)");
+
                 if (candidateLabel)
                 {
-                    int jumpPosModified = jumpPosModifier + i;
+                    //TraceLine("INSIDE if (candidateLabel)");
+                
+                    int jumpPosModified = (jumpPosModifier + i) < lastPosition ? (jumpPosModifier + i) : i;
+                    //TraceLine(string.Format($"before new SnapshotSpan, {jumpPosModified}, " + $"{jumpPosModified + 1}, {lastPosition}"));
                     SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(jumpPosModified, jumpPosModified + 1));
+                    //TraceLine("before GetTextMarkerGeometry");
                     Geometry geometry = this.view.TextViewLines.GetTextMarkerGeometry(firstCharSpan);
                     if (geometry != null)
                     {
@@ -447,6 +468,7 @@ namespace PeasyMotion
                         // reset lastJumpPos index if newline encountered, so we wont skip label on line border
                         lastJumpPos = newLine ? -100 : lastJumpPos;
                     }
+                    //TraceLine("after GetTextMarkerGeometry");
                 }
                 prevIsSeparator = curIsSeparator;
                 prevIsPunctuation = curIsPunctuation;
@@ -717,6 +739,7 @@ namespace PeasyMotion
                             adornmentCreateStopwatch.Start();
                         }
 #endif
+                        //TraceLine("before AddAdornment");
                         this.layer.AddAdornment(AdornmentPositioningBehavior.TextRelative, jw.span, null, adornment, JumpLabelAdornmentRemovedCallback);
 #if DEBUG_LABEL_ALGO
                         Trace.WriteLine($"POS={jw.textViewPosDbg,5} Adding jumplabel adornment");

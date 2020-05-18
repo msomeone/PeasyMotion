@@ -399,6 +399,10 @@ namespace PeasyMotion
         private void InputListenerOnKeyPressed(object sender, KeyPressEventArgs keyPressEventArgs)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
+            if (adornmentMgr == null) {
+                //Trace.WriteLine("PeasyMotion: InputListenerOnKeyPressed - adornmentMgr is null!");
+            //    Deactivate();
+            }
             try {
                 Debug.WriteLine("Key pressed " + keyPressEventArgs.KeyChar);
                 if (adornmentMgr.jumpLabelKeyArray.IndexOf(keyPressEventArgs.KeyChar) != -1)
@@ -419,6 +423,7 @@ namespace PeasyMotion
                         Deactivate();
                         if (jumpMode != JumpMode.VisibleDocuments)
                         {
+                            //adornmentMgr.TraceLine("before labelSnapshotSpan");
                             var labelSnapshotSpan = new SnapshotSpan(wpfTextView.TextSnapshot, jumpToResult.jumpLabelSpan);
 
                             switch (jumpMode) {
@@ -428,6 +433,7 @@ namespace PeasyMotion
                             case JumpMode.WordJump:
                             case JumpMode.LineJumpToWordBegining:
                             case JumpMode.LineJumpToWordEnding:
+                            case JumpMode.LineBeginingJump:
                             { // move caret to label
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
                             }
@@ -445,6 +451,8 @@ namespace PeasyMotion
                             }
                             break;
                             }
+
+                            //adornmentMgr.TraceLine("after switch labelSnapshotSpan");
                         }
                         else if (jumpMode == JumpMode.VisibleDocuments) {
                             jumpToResult.windowFrame.Show();
