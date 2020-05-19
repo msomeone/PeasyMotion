@@ -1,4 +1,4 @@
-﻿#define MEASUREEXECTIME
+﻿//#define MEASUREEXECTIME
 //#define DEBUG_LABEL_ALGO
 
 using System;

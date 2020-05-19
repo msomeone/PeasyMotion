@@ -1,4 +1,4 @@
-﻿#define MEASUREEXECTIME
+﻿//#define MEASUREEXECTIME
 
 using System;
 using System.Drawing;
