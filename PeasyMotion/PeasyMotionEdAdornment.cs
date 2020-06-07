@@ -391,6 +391,21 @@ namespace PeasyMotion
                         bool firstLine = i == firstPosition;
                         candidateLabel = (newLine && (i < lastPosition-1)) || firstLine;
                         jumpPosModifier = firstLine ? 0 : jumpPosModifier;
+                        // search till we find non empty char or next EOL
+                        int j = i + 1;
+                        while (j <= lastPosition) {
+                            var pos_j = new SnapshotPoint(snapshot, Math.Min(j, lastPosition-1));
+                            var ch_j = pos_j.GetChar();
+                            bool EOL_j = (ch_j == CR) && (ch_j == LF);
+                            if ((ch_j != ' ') && !EOL_j) {
+                                jumpPosModifier = jumpPosModifier + (j - i - 1);
+                                break;
+                            }
+                            else if (EOL_j) {
+                                break;
+                            }
+                            j++;
+                        }
                     }
                     break;
                 default:
