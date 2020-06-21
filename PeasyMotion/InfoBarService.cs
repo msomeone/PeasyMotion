@@ -57,12 +57,24 @@ namespace PeasyMotion
             return infoBarModel;
         }
         */
+        /*
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! Jump to line begining. Give it a try via Tools.InvokePeasyMotionJumpToLineBegining. Several bugfixes");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
                 "https://github.com/msomeone/PeasyMotion#jump-to-begining-of-line");
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+            return infoBarModel;
+        }
+        */
+        public override InfoBarModel getInfoBarModel() {
+            InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: Two characted search mode has beed added! Give it a try via Tools.InvokePeasyMotionTwoCharJump. LineBeginingJump bug fix.");
+            InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+                "https://github.com/msomeone/PeasyMotion#two-char-search");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);

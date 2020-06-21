@@ -1,3 +1,8 @@
+### 1.6.1
+- Two characted search mode has beed added. Invoke via Tools.InvokePeasyMotionTwoCharJump
+- Jump to line begining fix - non-empty lines have jump label on first 'visible' character
+- Added status bar text showing peasy motion status
+
 ### 1.5.1
 - Jump to line begining added via Tools.InvokePeasyMotionJumpToLineBegining
 - Improved EOL convention handling

@@ -4,9 +4,10 @@ PeasyMotion (doc tab & code navigation)
 
 ![Animated demonstration](preview.gif)
 
-Implements "word-motion" mode ~same way as it is done in vim-easymotion and 
-Jump to open document via jump label combo.
-This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
+Implements "word-motion", line motions, two char search modes ~same way as it is done in vim-easymotion.
+Implements fast text selection via jump label motion.
+Implements jumping to open document via jump label combo.
+This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key (in word-motion mode).
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
 
@@ -22,6 +23,7 @@ commands available:
 * **Tools.InvokePeasyMotionLineJumpToWordEnding**
 * **Tools.InvokePeasyMotionJumpToDocumentTab**
 * **Tools.InvokePeasyMotionJumpToLineBegining**
+* **Tools.InvokePeasyMotionTwoCharJump**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
@@ -47,13 +49,13 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 " gS prefix is added for ViEmu, no use for VsVim AFAIK.
 "VsVim and ViEmu are disabled until PeasyMotion finishes
 
-"Whole viewport jump-to-word beginning mode:
+"Whole viewport jump-to-word begining mode:
 nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 
 "Select text from current caret position to desired jumplabel (fwd and reverse directions supported)
 nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
 
-"Jump to word beginning in current line
+"Jump to word begining in current line
 nmap zw gS:vsc Tools.InvokePeasyMotionLineJumpToWordBegining<CR>
 "Jump to word ending in current line
 nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
@@ -64,12 +66,15 @@ nmap ;w gS:vsc Tools.InvokePeasyMotionJumpToDocumentTab<CR>
 "Jump to line begining:
 nmap ;l gS:vsc Tools.InvokePeasyMotionJumpToLineBegining<CR>
 
+"Two char search mode:
+nmap ;c gS:vsc Tools.InvokePeasyMotionTwoCharJump<CR>
+
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
 
-## Jump to word beginning or ending in current line
-Jump to word beginning  or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+## Jump to word begining or ending in current line
+Jump to word begining  or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
 
 ## Jump to document tab
 Jump to any open document tab via Tools.InvokePeasyMotionJumpToDocumentTab
@@ -79,6 +84,10 @@ When monospaced fonts are used in environment -> each character lower/upper of a
 
 ## Jump to begining of line
 Jump to begining of any visible line via Tools.InvokePeasyMotionJumpToLineBegining
+
+## Two char search
+Execute two character search for visibile text portion via Tools.InvokePeasyMotionTwoCharJump. Jump labels are placed at each match.
+When activated, two keys are queried, search and all matched are labeled. After that PM awaits for jump label keys to execute final motion and deactivate.
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.

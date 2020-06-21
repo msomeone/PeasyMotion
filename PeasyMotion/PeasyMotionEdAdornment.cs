@@ -42,6 +42,7 @@ using System.Runtime.InteropServices;
 
 namespace PeasyMotion
 { 
+
     struct JumpToResult
     {
         public JumpToResult(
@@ -66,9 +67,20 @@ namespace PeasyMotion
         LineJumpToWordBegining,
         LineJumpToWordEnding,
         VisibleDocuments,
-        LineBeginingJump
+        LineBeginingJump,
+        TwoCharJump
     }
 
+    class PeasyMotionEdAdornmentCtorArgs
+    {
+        public PeasyMotionEdAdornmentCtorArgs() {}
+
+        public IVsTextView vsTextView{ get; set; }
+        public IWpfTextView wpfView{ get; set; }
+        public ITextStructureNavigator textStructNav{ get; set; }
+        public JumpMode jumpMode{ get; set; }
+        public string twoCharSearchJumpKeys{ get; set; }
+    }
 
     /// <summary>
     /// PeasyMotionEdAdornment places red boxes behind all the "a"s in the editor window
@@ -171,23 +183,24 @@ namespace PeasyMotion
         /// Initializes a new instance of the <see cref="PeasyMotionEdAdornment"/> class.
         /// </summary>
         /// <param name="view">Text view to create the adornment for</param>
-        public PeasyMotionEdAdornment(IVsTextView vsTextView, IWpfTextView view, ITextStructureNavigator textStructNav, JumpMode jumpMode_)
+        public PeasyMotionEdAdornment(PeasyMotionEdAdornmentCtorArgs args)
         {
             this.jumpLabelKeyArray = GeneralOptions.Instance.AllowedJumpKeys;
 #if MEASUREEXECTIME
             var watch0 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-            jumpMode = jumpMode_;
+            jumpMode = args.jumpMode;
 
             var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.getJumpLabelAssignmentAlgorithm();
             var caretPositionSensivity = Math.Min(Int32.MaxValue >> 2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
 
+
+            this.textStructureNavigator = args.textStructNav;
+
+            this.vsTextView = args.vsTextView;
+            this.view = args.wpfView;
+
             this.layer = view.GetAdornmentLayer("PeasyMotionEdAdornment");
-
-            this.textStructureNavigator = textStructNav;
-
-            this.vsTextView = vsTextView;
-            this.view = view;
             //this.view.LayoutChanged += this.OnLayoutChanged;
 
             this.vsSettings = VsSettings.GetOrCreate(view);
@@ -212,7 +225,7 @@ namespace PeasyMotion
             if (jumpMode == JumpMode.VisibleDocuments) {
                 SetupJumpToDocumentTabMode(jumpWords);
             } else {
-                SetupJumpInsideTextViewMode(jumpWords, jumpLabelAssignmentAlgorithm, caretPositionSensivity);
+                SetupJumpInsideTextViewMode(jumpWords, jumpLabelAssignmentAlgorithm, caretPositionSensivity, args.twoCharSearchJumpKeys);
             }
 
             if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
@@ -268,7 +281,8 @@ namespace PeasyMotion
         private void SetupJumpInsideTextViewMode(
                 List<JumpWord> jumpWords, 
                 JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm,
-                int caretPositionSensivity
+                int caretPositionSensivity,
+                string twoCharSearchJumpKeys // null if jumpMode != TwoCharJump
             )
         {
 #if MEASUREEXECTIME
@@ -406,6 +420,12 @@ namespace PeasyMotion
                             }
                             j++;
                         }
+                    }
+                    break;
+                case JumpMode.TwoCharJump:
+                    {
+                        candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]) && 
+                                         (Char.ToLowerInvariant(nextCh) == twoCharSearchJumpKeys[1]) && (i < lastPosition);
                     }
                     break;
                 default:

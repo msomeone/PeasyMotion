@@ -176,7 +176,7 @@ sealed class ColorInfo
 
 internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 {
-    internal const string _PkgVersion = "1.5.70";
+    internal const string _PkgVersion = "1.6.3";
     public static string getCurrentVersion() { return _PkgVersion; }
 
     private static readonly ColorKey s_jumpLabelFirstMotionColorBg = ColorKey.Background(JumpLabelFirstMotionFormatDef.FMT_NAME);
