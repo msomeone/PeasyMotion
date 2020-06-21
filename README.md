@@ -49,13 +49,13 @@ just bind PeasyMotion command in your .vimrc (or .vsvimrc) file:
 " gS prefix is added for ViEmu, no use for VsVim AFAIK.
 "VsVim and ViEmu are disabled until PeasyMotion finishes
 
-"Whole viewport jump-to-word begining mode:
+"Whole viewport jump-to-word beginning mode:
 nnoremap <Space> gS:vsc Tools.InvokePeasyMotion<CR>
 
-"Select text from current caret position to desired jumplabel (fwd and reverse directions supported)
+"Select text from current caret position to desired jump label (fwd and reverse directions supported)
 nmap ;; gS:vsc Tools.InvokePeasyMotionTextSelect<CR>
 
-"Jump to word begining in current line
+"Jump to word beginning in current line
 nmap zw gS:vsc Tools.InvokePeasyMotionLineJumpToWordBegining<CR>
 "Jump to word ending in current line
 nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
@@ -63,7 +63,7 @@ nmap ze gS:vsc Tools.InvokePeasyMotionLineJumpToWordEnding<CR>
 "Jump to any open document tab
 nmap ;w gS:vsc Tools.InvokePeasyMotionJumpToDocumentTab<CR>
 
-"Jump to line begining:
+"Jump to line beginning:
 nmap ;l gS:vsc Tools.InvokePeasyMotionJumpToLineBegining<CR>
 
 "Two char search mode:
@@ -73,8 +73,8 @@ nmap ;c gS:vsc Tools.InvokePeasyMotionTwoCharJump<CR>
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
 
-## Jump to word begining or ending in current line
-Jump to word begining  or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
+## Jump to word beginning or ending in current line
+Jump to word beginning  or ending in current line via Tools.InvokePeasyMotionLineJumpToWordBegining or Tools.InvokePeasyMotionLineJumpToWordEnding
 
 ## Jump to document tab
 Jump to any open document tab via Tools.InvokePeasyMotionJumpToDocumentTab
@@ -82,11 +82,11 @@ The only way to prevent UI 'jumping' when tabs caption are changed is to use mon
 In case of non-monospaced fonts in 'Environment' - when jump labels are assigned to document tab title -> title's width can change it's width (get shorter or longer, depends on particular characters combination in caption). When document tab title changes, the re-adjustment of tab document title positions happen -> jump labels and whole doc tab title shifts either side. When user's gaze was fixed on the jump label or document tab title user will lose his 'point of focus'/ gaze point.
 When monospaced fonts are used in environment -> each character lower/upper of any kind occupies strictly the same space in title. This prevents any changes/adjustments to captions widths/doc title positions in combination with fact, that jump label replaces part of document name (to help with keeping document title the same width as it was).
 
-## Jump to begining of line
-Jump to begining of any visible line via Tools.InvokePeasyMotionJumpToLineBegining
+## Jump to beginning of line
+Jump to beginning of any visible line via Tools.InvokePeasyMotionJumpToLineBegining
 
 ## Two char search
-Execute two character search for visibile text portion via Tools.InvokePeasyMotionTwoCharJump. Jump labels are placed at each match.
+Execute two character search for visible text portion via Tools.InvokePeasyMotionTwoCharJump. Jump labels are placed at each match.
 When activated, two keys are queried, search and all matched are labeled. After that PM awaits for jump label keys to execute final motion and deactivate.
 
 ## Bugreports, Feature requests and contributions
@@ -101,7 +101,7 @@ is available in the same directory under the name LICENSE.txt.
 The build representing the latest source code can be downloaded from the
 [Open Vsix Gallery](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
-## Buidling
+## Building
 For cloning and building this project yourself, make sure
 to install the
 [Extensibility Essentials](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.ExtensibilityEssentials)
