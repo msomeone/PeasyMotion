@@ -14,8 +14,8 @@ namespace PeasyMotion
 {
     class InputListener : IOleCommandTarget
     {
-        readonly IVsTextView vsTextView;
-        ITextView textView;
+        public readonly IVsTextView vsTextView;
+        public ITextView textView;
         IOleCommandTarget nextCommandHandler;
 
         public event KeyPressEventHandler KeyPressed;

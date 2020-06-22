@@ -523,6 +523,10 @@ namespace PeasyMotion
                     if (activeJumpMode == JumpMode.TwoCharJump)
                     {
                         if (userQueryAccumulatedKeyChars.Length == 2) {
+                            var wpfTextView = inputListenerUserQueryPhase.textView as IWpfTextView;
+                            if (null != wpfTextView) {
+                                wpfTextView.LostAggregateFocus -= OnTextViewFocusLost;
+                            }
                             StopListening2Keyboard(); // kill user key query accumulator / listener
                             ExecuteCommonJumpCode(); // start regular jumping code
                         }
