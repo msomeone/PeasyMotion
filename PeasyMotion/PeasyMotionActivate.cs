@@ -65,6 +65,7 @@ namespace PeasyMotion
 
         private static string ViEmuEnableDisableCommand = "ViEmu.EnableDisableViEmu";
         private static bool viEmuPluginPresent = false;
+        private static bool isViEmuEnabled = true; // weak assumption, but we must use this together with "ViEmuToggle" to prevent double-toggles
 
         private JumpMode activeJumpMode = JumpMode.InvalidMode;
 
@@ -444,7 +445,9 @@ namespace PeasyMotion
         }
 
         private void OnTextViewFocusLost(object sender, EventArgs e) {
+            Debug.WriteLine($"PeasyMotion: OnTextViewFocusLost");
             if ((adornmentMgr != null) || (inputListenerUserQueryPhase != null)) {
+                Debug.WriteLine($"PeasyMotion: OnTextViewFocusLost -> gona call deactivate");
                 this.Deactivate();
             }
         }
@@ -460,24 +463,38 @@ namespace PeasyMotion
 
         private void TryEnableVsVim()
         {
+            Debug.WriteLine($"PeasyMotion: TryEnableVsVim");
             ThreadHelper.ThrowIfNotOnUIThread();
             if (enableVsVimCmdAvailable)
             {
+                Debug.WriteLine($"PeasyMotion: cmdExec.Execute(VsVimSetEnabled)");
                 cmdExec.Execute(VsVimSetEnabled);
             }
         }
 
-        private void TryToggleViEmu() {
-            if (viEmuPluginPresent) {
+        private void TryToggleViEmu(bool desiredViEmuState, bool currentViEmuState) {
+            Debug.WriteLine($"PeasyMotion: TryToggleViEmu");
+            if (viEmuPluginPresent && (desiredViEmuState != currentViEmuState)) {
                 var watch = System.Diagnostics.Stopwatch.StartNew();
+                Debug.WriteLine($"PeasyMotion: cmdExec.Execute(ViEmuEnableDisableCommand);");
                 cmdExec.Execute(ViEmuEnableDisableCommand);
                 watch.Stop();
                 Debug.WriteLine($"PeasyMotion ViEmuEnableDisableCommand exec took: {watch.ElapsedMilliseconds} ms");
+                isViEmuEnabled = desiredViEmuState;
+                Debug.WriteLine($"PeasyMotion isViEmuEnabled = {isViEmuEnabled}");
             }
         }
-        private void TryDisableViEmu() => TryToggleViEmu(); 
+        private void TryDisableViEmu() //=> TryToggleViEmu(); 
+        {
+            Debug.WriteLine($"PeasyMotion: TryDisableViEmu");
+            TryToggleViEmu(false, isViEmuEnabled);  // false === disabled
+        }
 
-        private void TryEnableViEmu() => TryToggleViEmu();
+        private void TryEnableViEmu() //=> TryToggleViEmu();
+        {
+            Debug.WriteLine($"PeasyMotion: TryEnableViEmu");
+            TryToggleViEmu(true, isViEmuEnabled);  // true === enabled
+        }
 
         private void CreateInputListener(IVsTextView view, IWpfTextView textView)
         {
@@ -619,9 +636,11 @@ namespace PeasyMotion
 
         public void Deactivate()
         {
+            Debug.WriteLine($"PeasyMotion: Deactivate()");
             ThreadHelper.ThrowIfNotOnUIThread();
             if (adornmentMgr != null) {
                 adornmentMgr.view.LostAggregateFocus -= OnTextViewFocusLost;
+                Debug.WriteLine($"PeasyMotion: adornmentMgr.view.LostAggregateFocus -= OnTextViewFocusLost;");
             }
             StopListening2Keyboard();
             TryEnableVsVim();
@@ -634,16 +653,19 @@ namespace PeasyMotion
 
         private void StopListening2Keyboard()
         {
+            Debug.WriteLine($"PeasyMotion: StopListening2Keyboard");
             ThreadHelper.ThrowIfNotOnUIThread();
             if (null != inputListener) {
                 inputListener.KeyPressed -= InputListenerOnKeyPressed;
                 inputListener.RemoveFilter();
                 inputListener = null;
+                Debug.WriteLine($"PeasyMotion: inputListener.KeyPressed -= InputListenerOnKeyPressed;");
             }
             if (null != inputListenerUserQueryPhase) {
                 inputListenerUserQueryPhase.KeyPressed -= InputListenerOnKeyPressedCharAccumulation;
                 inputListenerUserQueryPhase.RemoveFilter();
                 inputListenerUserQueryPhase = null;
+                Debug.WriteLine($"PeasyMotion: inputListenerUserQueryPhase.KeyPressed -= InputListenerOnKeyPressedCharAccumulation;");
             }
         }
 
