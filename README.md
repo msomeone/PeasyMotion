@@ -3,7 +3,7 @@ PeasyMotion (doc tab & code navigation)
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
 ![Animated demonstration](preview.gif)
- 
+
 Implements "word-motion", line motions, two char search modes ~same way as it is done in vim-easymotion.
 Implements fast text selection via jump label motion.
 Implements jumping to open document via jump label combo.
