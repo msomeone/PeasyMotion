@@ -41,7 +41,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using System.Runtime.InteropServices;
 
 namespace PeasyMotion
-{ 
+{
 
     struct JumpToResult
     {
@@ -56,7 +56,7 @@ namespace PeasyMotion
             this.windowFrame = windowFrame;
         }
         public int currentCursorPosition {get;}
-        public SnapshotSpan jumpLabelSpan {get;} // contains Span of finally selected label 
+        public SnapshotSpan jumpLabelSpan {get;} // contains Span of finally selected label
         public IVsWindowFrame windowFrame {get;}
     };
 
@@ -110,7 +110,7 @@ namespace PeasyMotion
                     IVsWindowFrame windowFrame,
                     IVsTextView windowPrimaryTextView,
                     string vanillaTabCaption
-                ) 
+                )
             {
                 this.span = span;
                 this.label = label;
@@ -130,7 +130,7 @@ namespace PeasyMotion
 
         private readonly struct JumpWord
         {
-            public JumpWord( 
+            public JumpWord(
                     int distanceToCursor,
                     Rect adornmentBounds,
                     SnapshotSpan span,
@@ -233,7 +233,7 @@ namespace PeasyMotion
 #if MEASUREEXECTIME
                 var watch2 = System.Diagnostics.Stopwatch.StartNew();
 #endif
-                // sort jump words from closest to cursor to farthest 
+                // sort jump words from closest to cursor to farthest
                 jumpWords.Sort((a, b) => +a.distanceToCursor.CompareTo(b.distanceToCursor));
 #if MEASUREEXECTIME
                 watch2.Stop();
@@ -279,7 +279,7 @@ namespace PeasyMotion
         }
 
         private void SetupJumpInsideTextViewMode(
-                List<JumpWord> jumpWords, 
+                List<JumpWord> jumpWords,
                 JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm,
                 int caretPositionSensivity,
                 string twoCharSearchJumpKeys // null if jumpMode != TwoCharJump
@@ -334,15 +334,15 @@ namespace PeasyMotion
             bool prevIsLetterOrDigit = Char.IsLetterOrDigit(tmpCh);
             bool prevIsControl = Char.IsControl(tmpCh);
             SnapshotPoint currentPoint = new SnapshotPoint(snapshot, startPoint.Position);
-            SnapshotPoint nextPoint = currentPoint; 
-            SnapshotPoint prevPoint = currentPoint; 
+            SnapshotPoint nextPoint = currentPoint;
+            SnapshotPoint prevPoint = currentPoint;
             int firstPosition = startPoint.Position;
             int i = firstPosition;
             int lastPosition = Math.Max(endPoint.Position, 0);
             if (startPoint.Position == lastPosition) {
-                i = lastPosition + 2; // just skip the loop. noob way :D 
+                i = lastPosition + 2; // just skip the loop. noob way :D
             }
-            
+
             // EOL convention reminder | Windows = CR LF \r\n | Unix = LF \n | Mac = CR \r
 #if DEBUG_LABEL_ALGO
             int dbgLabelAlgo_TraceStart = i;
@@ -388,7 +388,7 @@ namespace PeasyMotion
                                (!EOL_Windows && ((ch == LF) || (ch == CR    )))   ;
                 int jumpPosModifier = jumpPosModifierBase;
                 bool candidateLabel = false;
-                //TODO: anything faster and simpler ? will regex be faster? maybe symbols 
+                //TODO: anything faster and simpler ? will regex be faster? maybe symbols
                 // LUT with BITS (IsSep,IsPunct, etc as bits in INT record of LUT?)
                 switch (jumpMode) {
                 case JumpMode.LineJumpToWordBegining:
@@ -400,7 +400,7 @@ namespace PeasyMotion
                         candidateLabel = curIsLetterOrDigit && !nextIsLetterOrDigit;
                     }
                     break;
-                case JumpMode.LineBeginingJump: 
+                case JumpMode.LineBeginingJump:
                     {
                         bool firstLine = i == firstPosition;
                         candidateLabel = (newLine && (i < lastPosition-1)) || firstLine;
@@ -424,13 +424,13 @@ namespace PeasyMotion
                     break;
                 case JumpMode.TwoCharJump:
                     {
-                        candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]) && 
+                        candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]) &&
                                          (Char.ToLowerInvariant(nextCh) == twoCharSearchJumpKeys[1]) && (i < lastPosition);
                     }
                     break;
                 default:
-                    candidateLabel = 
-                        (curIsLetterOrDigit && !prevIsLetterOrDigit) || 
+                    candidateLabel =
+                        (curIsLetterOrDigit && !prevIsLetterOrDigit) ||
                         ((prevIsControl || prevNewLine) && newLine) ||
                         ((!prevIsControl && !prevNewLine) && !prevIsLetterOrDigit && newLine);
                         //(!curIsControl && nextIsControl) ||
@@ -446,8 +446,8 @@ namespace PeasyMotion
                 candidateLabel = candidateLabel && (i < lastPosition);
 
                 //if (jumpMode == JumpMode.LineJump) {
-                    
-                //} 
+
+                //}
 #if DEBUG_LABEL_ALGO
                 string cvtChar(char c) {
                     if (ch == '\0') return new string('l', 1);
@@ -462,7 +462,7 @@ namespace PeasyMotion
                         $"IsLetOrDig={curIsLetterOrDigit,5} isCtrl={curIsControl} ||| "+
                         $" prevChar={dbgPrevCh,5}({(int)prevChar,5}) isSep={prevIsSeparator,5} isPunct={prevIsPunctuation,5} "+
                         $"IsLetOrDig={prevIsLetterOrDigit,5} isCtrl={prevIsControl} ||| "+
-                        $"nextChar={dbgNextCh,5}({(int)nextCh,5}) isSep={Char.IsSeparator(nextCh),5} "+ 
+                        $"nextChar={dbgNextCh,5}({(int)nextCh,5}) isSep={Char.IsSeparator(nextCh),5} "+
                         $"isPunct={Char.IsPunctuation(nextCh),5} "+
                         $"IsLetOrDig={Char.IsLetterOrDigit(nextCh),5} isCtrl={nextIsControl,5}" +
                         $"(lastJumpPos+MD)<i = {(lastJumpPos + MinimumDistanceBetweenLabels) < i,5} " +
@@ -475,7 +475,7 @@ namespace PeasyMotion
                 if (candidateLabel)
                 {
                     //TraceLine("INSIDE if (candidateLabel)");
-                
+
                     int jumpPosModified = (jumpPosModifier + i) < lastPosition ? (jumpPosModifier + i) : i;
                     //TraceLine(string.Format($"before new SnapshotSpan, {jumpPosModified}, " + $"{jumpPosModified + 1}, {lastPosition}"));
                     SnapshotSpan firstCharSpan = new SnapshotSpan(this.view.TextSnapshot, Span.FromBounds(jumpPosModified, jumpPosModified + 1));
@@ -530,12 +530,12 @@ namespace PeasyMotion
             //var wfs = vsUIShell4.GetDocumentWindowFrames(__WindowFrameTypeFlags.WINDOWFRAMETYPE_Document).GetValueOrDefault();
             var wfs = PeasyMotionActivate.Instance.iVsUiShell.GetDocumentWindowFrames().GetValueOrDefault();
             var currentWindowFrame = this.vsTextView.GetWindowFrame().GetValueOrDefault(null);
-                    
+
             Rect emptyRect = new Rect();
             SnapshotSpan emptySpan = new SnapshotSpan();
             Trace.WriteLine($"GetDocumentWindowFrames returned {wfs.Count} window frames");
             int wfi = 0; // there is no easy way to determine document tab coordinates T_T
-            foreach(var wf in wfs) 
+            foreach(var wf in wfs)
             {
                 wf.GetProperty((int)VsFramePropID.Caption, out var oce);
                 string ce = (string)oce;
@@ -557,7 +557,7 @@ namespace PeasyMotion
 #endif
                 //IVsCodeWindow cw = wf.GetCodeWindow().GetValueOrDefault(null);
                 //IVsTextView wptv = cw?.GetPrimaryView().GetValueOrDefault(null);
-                
+
                 IVsTextView wptv = wf.GetPrimaryTextView();
 #if MEASUREEXECTIME
                 getPrimaryViewSW.Stop();
@@ -602,7 +602,7 @@ namespace PeasyMotion
                 Trace.WriteLine($"PeasyMotion document tabs set caption: {setCaptionTiming?.ElapsedMilliseconds} ms");
 #endif
                 UpdateViewFramesCaptions(primaryViewsToUpdate);
-                
+
         }
 
         public static void UpdateViewFramesCaptions(List<IVsTextView> tviews) {
@@ -617,7 +617,7 @@ namespace PeasyMotion
             Trace.WriteLine($"PeasyMotion document tabs view update captions (UpdateViewFramesCaptions): {timing2?.ElapsedMilliseconds} ms");
 #endif
         }
-        
+
         public static string getDocumentTabCaptionWithLabel(string originalCaption, string jumpLabel) {
             return $"{jumpLabel.ToUpper()} |{originalCaption.Substring(jumpLabel.Length+2)}"; // 2 <<= for '| ' chars
         }
@@ -635,7 +635,7 @@ namespace PeasyMotion
             case nameof(VsSettings.JumpLabelFirstMotionForegroundColor):
                 {
                     var brush = val as SolidColorBrush;
-                    foreach(var j in currentJumps) { 
+                    foreach(var j in currentJumps) {
                         if ((j.labelAdornment != null) && ((j.labelAdornment.Content as string).Length > 1)) {
                             j.labelAdornment.Foreground = brush;
                         }
@@ -687,7 +687,7 @@ namespace PeasyMotion
 #endif
 
         private Dictionary<char, JumpNode> computeGroups(int wordStartIndex, int wordEndIndex, string keys0, string prefix, List<JumpWord> jumpWords)
-        { 
+        {
             // SC-Tree algorithm from vim-easymotion script with minor changes
             var wordCount = wordEndIndex - wordStartIndex + 1;
             var keyCount = keys0.Length;
@@ -728,7 +728,7 @@ namespace PeasyMotion
             }
 
             var k = 0;
-            var keyIndex = 0; 
+            var keyIndex = 0;
             Array.Reverse(keyCounts);
             foreach (int KeyCount2 in keyCounts)
             {
@@ -737,7 +737,7 @@ namespace PeasyMotion
                     groups[keys[keyIndex]] = new JumpNode()
                     {
                         jumpWordIndex = -1,
-                        childrenNodes = computeGroups(wordStartIndex + k, wordStartIndex + k + KeyCount2 - 1, Reverse(string.Copy(keys)), 
+                        childrenNodes = computeGroups(wordStartIndex + k, wordStartIndex + k + KeyCount2 - 1, Reverse(string.Copy(keys)),
                             prefix + keys[keyIndex], jumpWords )
                     };
                 }
@@ -787,9 +787,9 @@ namespace PeasyMotion
 
                     //Debug.WriteLine(jw.text + " -> |" + jumpLabel + "|");
                     var cj = new Jump(
-                        span : jw.span, 
-                        label : jumpLabel, 
-                        labelAdornment : adornment, 
+                        span : jw.span,
+                        label : jumpLabel,
+                        labelAdornment : adornment,
                         windowFrame : jw.windowFrame,
                         vanillaTabCaption : jw.vanillaTabCaption,
                         windowPrimaryTextView : jw.windowPrimaryTextView
@@ -857,12 +857,12 @@ namespace PeasyMotion
             if (-1 < idx)
             {
                 jumpToResult = new JumpToResult(
-                    currentCursorPosition : this.view.Caret.Position.BufferPosition.Position, 
+                    currentCursorPosition : this.view.Caret.Position.BufferPosition.Position,
                     jumpLabelSpan : currentJumps[idx].span,
                     windowFrame : currentJumps[idx].windowFrame
                 );
                 return true;
-            } 
+            }
             else
             {
 #if MEASUREEXECTIME
@@ -870,9 +870,9 @@ namespace PeasyMotion
 #endif
                 var jumpsToRemoveOrMakeInactive = currentJumps.Where(
                     j => !j.label.StartsWith(label, StringComparison.InvariantCulture)).ToList();
-    
+
                 var textViewsToUpdateCaptions = new List<IVsTextView>();
-                if (jumpMode == JumpMode.VisibleDocuments) 
+                if (jumpMode == JumpMode.VisibleDocuments)
                 { // keep all labeled document tabs
                     foreach(Jump j in jumpsToRemoveOrMakeInactive) { // set empty caption and dont touch anymore
                         j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
@@ -900,7 +900,7 @@ namespace PeasyMotion
 
                     //Stabilize tab caption, keeping it same width as before:
                     //      Best results with fixed width fonts in Tools->Fonts..->Environment
-                    // replace parts of document caption with label & decor(space char), trying to 
+                    // replace parts of document caption with label & decor(space char), trying to
                     //preserve same tab caption width!
                     j.windowFrame?.SetDocumentWindowFrameCaptionWithLabel(
                         j.vanillaTabCaption,
@@ -912,7 +912,7 @@ namespace PeasyMotion
                 timing1.Stop();
                 Trace.WriteLine($"PeasyMotion document tabs update caption: {timing1?.ElapsedMilliseconds} ms");
 #endif
-                
+
                 UpdateViewFramesCaptions(textViewsToUpdateCaptions);
             }
             jumpToResult = new JumpToResult();

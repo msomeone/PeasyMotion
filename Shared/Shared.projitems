@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>fa3a3bc8-1780-40d0-af0d-087d7d92d516</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BaseOptionModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BaseOptionPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)CommandExecutorService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InfoBarService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InputListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JumpLabelClassifierProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JumpLabelUserControl.xaml.cs">
+      <DependentUpon>$(MSBuildThisFileDirectory)JumpLabelUserControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionActivate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionEdAdornment.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionEdAdornmentTextViewCreationListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsMethodExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsSettings.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="$(MSBuildThisFileDirectory)JumpLabelUserControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+</Project>

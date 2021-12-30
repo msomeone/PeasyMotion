@@ -123,41 +123,41 @@ namespace PeasyMotion
 
         private void CreateMenu() {
             // one day this copy-pasta will exceed one page of code... and then! and only than we gona do smth about that :}
-            var wordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var wordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionActivateId);
             var wordJumpMenuItem = new MenuCommand(this.ExecuteWordJump, wordJumpMenuCommandID);
             commandService.AddCommand(wordJumpMenuItem);
 
-            var selectionWordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var selectionWordJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionSelectTextActivateId);
             var selectionWordJumpMenuItem = new MenuCommand(this.ExecuteSelectTextWordJump, selectionWordJumpMenuCommandID);
             commandService.AddCommand(selectionWordJumpMenuItem);
 
-            var lineJumpToWordBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var lineJumpToWordBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionLineJumpToWordBeginingId);
             var lineJumpToWordBeginingMenuItem = new MenuCommand(this.ExecuteLineJumpToWordBegining, lineJumpToWordBeginingMenuCommandID);
             commandService.AddCommand(lineJumpToWordBeginingMenuItem);
 
-            var lineJumpToWordEndingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var lineJumpToWordEndingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionLineJumpToWordEndingId);
             var lineJumpToWordEndingMenuItem = new MenuCommand(this.ExecuteLineJumpToWordEnding, lineJumpToWordEndingMenuCommandID);
             commandService.AddCommand(lineJumpToWordEndingMenuItem);
 
-            var jumpToDocTabMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var jumpToDocTabMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionJumpToDocumentTab);
             var jumpToDocTabMenuItem = new MenuCommand(this.ExecuteJumpToDocTab, jumpToDocTabMenuCommandID);
             commandService.AddCommand(jumpToDocTabMenuItem);
 
-            var jumpToLineBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var jumpToLineBeginingMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionJumpToLineBegining);
             var jumpToLineBeginingMenuItem = new MenuCommand(this.ExecuteJumpToLineBegining, jumpToLineBeginingMenuCommandID);
             commandService.AddCommand(jumpToLineBeginingMenuItem);
 
-            var twoCharJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+            var twoCharJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
                 PeasyMotion.PackageIds.PeasyMotionTwoCharJump);
             var twoCharJumphMenuItem = new MenuCommand(this.ExecuteTwoCharJump, twoCharJumpMenuCommandID);
             commandService.AddCommand(twoCharJumphMenuItem);
-            
+
         }
 
         /// <summary>
@@ -211,13 +211,13 @@ namespace PeasyMotion
             }
 
             IComponentModel componentModel = await package.GetServiceAsync(typeof(SComponentModel)).ConfigureAwait(true) as IComponentModel;
-            if (componentModel == null) 
+            if (componentModel == null)
             {
                 ThrowAndLog(nameof(package) + ": failed to retrieve SComponentModel");
             }
 
             IVsEditorAdaptersFactoryService editor_ = componentModel.GetService<IVsEditorAdaptersFactoryService>();
-            if (editor_ == null) 
+            if (editor_ == null)
             {
                 ThrowAndLog(nameof(package) + ": failed to retrieve IVsEditorAdaptersFactoryService");
             }
@@ -258,7 +258,7 @@ namespace PeasyMotion
             activeJumpMode = JumpMode.WordJump;
             ExecuteCommonJumpCode();
         }
-        
+
         private void ExecuteSelectTextWordJump(object o, EventArgs e)
         {
             activeJumpMode = JumpMode.SelectTextJump;
@@ -339,7 +339,7 @@ namespace PeasyMotion
                 statusBar.FreezeOutput(1);
             }
         }
-        private void setStatusBarText(string statusBarText) 
+        private void setStatusBarText(string statusBarText)
         {
             unfreezeStatusBar();
             statusBar.SetText($"| PeasyMotion |> {statusBarText}"); // Set the status bar text and make its display static.
@@ -349,7 +349,7 @@ namespace PeasyMotion
         }
 
 
-        private void ShowNotificationsIfAny() 
+        private void ShowNotificationsIfAny()
         {
             var pkgVersion = System.Version.Parse(GeneralOptions.getCurrentVersion());
             System.Version cfgPkgVersion;
@@ -358,10 +358,10 @@ namespace PeasyMotion
             } catch(Exception ex){
                 Trace.Write($"Failed to parse package version stored(if there was any) in options registry! Exception: {ex.ToString()}");
                 cfgPkgVersion = pkgVersion; //System.Version.Parse("0.0.0"); //TODO!!!! for release - change to =pkgVersion!! No notification is needed for 'whats new'
-            } 
+            }
             Debug.WriteLine($"cfgPkgVersion = {cfgPkgVersion} | pkgVersion = {pkgVersion}");
             if (!InfoBarService.Instance.anyInfoBarActive() && (pkgVersion > cfgPkgVersion))  {
-                InfoBarService.Instance.ShowInfoBar(new WhatsNewNotification(), 
+                InfoBarService.Instance.ShowInfoBar(new WhatsNewNotification(),
                     new Action( () => { // in case info bar is closed propeprly, stop showing notification
                         GeneralOptions.Instance.setInstalledVersionToCurrentPkgVersion();
                         GeneralOptions.Instance.Save();
@@ -475,7 +475,7 @@ namespace PeasyMotion
                 Debug.WriteLine($"PeasyMotion ViEmuEnableDisableCommand exec took: {watch.ElapsedMilliseconds} ms");
             }
         }
-        private void TryDisableViEmu() => TryToggleViEmu(); 
+        private void TryDisableViEmu() => TryToggleViEmu();
 
         private void TryEnableViEmu() => TryToggleViEmu();
 
@@ -667,15 +667,15 @@ namespace PeasyMotion
             }
 #endif
 
-//how to: 
+//how to:
 //howtos:
 //var Site = PeasyMotionActivate.Instance.ServiceProvider;
 //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;
 //wf.SetProperty((int)VsFramePropID.EditorCaption, null);
 //wf.SetProperty((int)VsFramePropID.OwnerCaption, newCaption);
 //wf.SetProperty((int)VsFramePropID.ShortCaption, newCaption);
-//if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c)) 
-//wf.GetProperty((int)VsFramePropID.OverrideCaption, out var oovcap); 
+//if (VSConstants.S_OK == wf.GetProperty((int)VsFramePropID.OverrideCaption, out var c))
+//wf.GetProperty((int)VsFramePropID.OverrideCaption, out var oovcap);
 //wf.GetProperty((int)VsFramePropID.EditorCaption, out var oecap);
 //wf.GetProperty((int)VsFramePropID.OwnerCaption, out var oocap);
 //string ecap = (string)oecap;
