@@ -23,7 +23,7 @@ namespace PeasyMotion
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New feature has been added! Text selection via jump. Give it a try via Tools.InvokePeasyMotionTextSelect command.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
-            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "http://github.com/msomeone/PeasyMotion#text-selection-via-toolsinvokepeasymotiontextselect-command");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
@@ -36,7 +36,7 @@ namespace PeasyMotion
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! In-Line word jump (begin/end). Give it a try via Tools.PeasyMotionLineJumpToWordBegining or Tools.PeasyMotionLineJumpToWordEnding command.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
-            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://github.com/msomeone/PeasyMotion#jump-to-word-begining-or-ending-in-current-line");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
@@ -49,7 +49,7 @@ namespace PeasyMotion
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! Jump to document tab. Give it a try via Tools.InvokePeasyMotionJumpToDocumentTab. New option: one can set allowed characters to be used in jump labels.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
-            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://github.com/msomeone/PeasyMotion#jump-to-document-tab");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
@@ -62,7 +62,7 @@ namespace PeasyMotion
             InfoBarTextSpan text = new InfoBarTextSpan(
                 "PeasyMotion: New mode has been added! Jump to line begining. Give it a try via Tools.InvokePeasyMotionJumpToLineBegining. Several bugfixes");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
-            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://github.com/msomeone/PeasyMotion#jump-to-begining-of-line");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
@@ -70,11 +70,22 @@ namespace PeasyMotion
             return infoBarModel;
         }
         */
+        /*
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: Two characted search mode has beed added! Give it a try via Tools.InvokePeasyMotionTwoCharJump. LineBeginingJump bug fix.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
-            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info", 
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://github.com/msomeone/PeasyMotion#two-char-search");
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+            return infoBarModel;
+        }*/
+        public override InfoBarModel getInfoBarModel() {
+            InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: 2022 - Visual Studio 2022 support is here! Link is in 'more info' section");
+            InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
+                "https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion2022");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
@@ -143,7 +154,7 @@ namespace PeasyMotion
                 if (host == null) {
                     return;
                 }
-                
+
                 var factory = _serviceProvider.GetService(typeof(SVsInfoBarUIFactory)) as IVsInfoBarUIFactory;
                 _element = factory.CreateInfoBar(ib.getInfoBarModel());
                 _element.Advise(this, out _cookie);

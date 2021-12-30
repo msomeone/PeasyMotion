@@ -3,7 +3,7 @@
 
 // Options based on VSSDK Options code + some stackoverflow recipes and few classes from VsVim :}
 // original ColorKey, ColorInfo, LoadColor*, SaveColor from VsVim/Src/VsVimShared/Implementation/OptionPages/DefaultOptionPage.cs
-// 
+//
 /* VsVim licence:
 Copyright 2012 Jared Parsons
 
@@ -98,7 +98,7 @@ public class EnumValuesListConverter<EnumType> : StringConverter
 // Using inheritance (fuck it), we'are able to workaound the issue.
 public class JumpAlgoEnumValuesListConverter : EnumValuesListConverter<JumpLabelAssignmentAlgorithm> {}
 
-public class TextEditorFontsAndColorsItemsList 
+public class TextEditorFontsAndColorsItemsList
 {
     private static List<string> _colorableItemsCached = new List<string>();
     public static List<string> ColorableItemsCached
@@ -108,7 +108,7 @@ public class TextEditorFontsAndColorsItemsList
                 obtainItems();
             }
             return _colorableItemsCached;
-        }       
+        }
     }
 
     private static void obtainItems() {
@@ -176,7 +176,7 @@ sealed class ColorInfo
 
 internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 {
-    internal const string _PkgVersion = "1.6.78";
+    internal const string _PkgVersion = "1.7.0";
     public static string getCurrentVersion() { return _PkgVersion; }
 
     private static readonly ColorKey s_jumpLabelFirstMotionColorBg = ColorKey.Background(JumpLabelFirstMotionFormatDef.FMT_NAME);
@@ -193,7 +193,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     });
 
     private readonly Dictionary<ColorKey, ColorInfo> colorMap = new Dictionary<ColorKey, ColorInfo>();
-    
+
     public GeneralOptions()
     {
         foreach (var colorKey in s_colorKeyList) {
@@ -218,7 +218,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     public System.Drawing.Color JumpLabelFirstMotionBackgroundColor
     {
         get { return GetColor(s_jumpLabelFirstMotionColorBg); }
-        set { 
+        set {
 #if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionBackgroundColor property set color={value}");
             if (JumpLabelFirstMotionBackgroundColor != value) {
@@ -238,7 +238,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     public System.Drawing.Color JumpLabelFirstMotionForegroundColor
     {
         get { return GetColor(s_jumpLabelFirstMotionColorFg); }
-        set { 
+        set {
 #if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFirstMotionForegroundColor property set color={value}");
             if (JumpLabelFirstMotionForegroundColor != value) {
@@ -262,7 +262,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     public System.Drawing.Color JumpLabelFinalMotionBackgroundColor
     {
         get { return GetColor(s_jumpLabelFinalMotionColorBg); }
-        set { 
+        set {
 #if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionBackgroundColor property set color={value}");
             if (JumpLabelFinalMotionBackgroundColor != value) {
@@ -281,7 +281,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     public System.Drawing.Color JumpLabelFinalMotionForegroundColor
     {
         get { return GetColor(s_jumpLabelFinalMotionColorFg); }
-        set { 
+        set {
 #if DEBUG_COLOR_STYLE_OPTIONS
             Debug.WriteLine($"GeneralOptions.JumpLabelFinalMotionForegroundColor property set color={value}");
             if (JumpLabelFinalMotionForegroundColor != value) {
@@ -293,7 +293,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     }
 
 
-    private String _jumpLabelAssignmentAlgorithmStr = 
+    private String _jumpLabelAssignmentAlgorithmStr =
             Enum2StrHelper<JumpLabelAssignmentAlgorithm>.convertToStr(JumpLabelAssignmentAlgorithm.CaretRelative);
     [Category("General")]
     [DisplayName("Jump label assignment algorithm")]
@@ -329,12 +329,12 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
     private string _allowedJumpKeys = DefaultAllowedKeys;
     [Category("General")]
     [DisplayName("Allowed jump label characters")]
-    [Description("Default = \"asdghklqwertyuiopzxcvbnmfj;\" | " + 
+    [Description("Default = \"asdghklqwertyuiopzxcvbnmfj;\" | " +
                  "Set field empty to reset to defaults. Beware - characters order affects ergonomics!\n" +
                  "Chars must be unique among list. Allowed jump label characters: " +
                  "lowercase letters only, numbers and punctuation allowed.")]
     [DefaultValue(DefaultAllowedKeys)]
-    public string AllowedJumpKeys{ 
+    public string AllowedJumpKeys{
         get { return _allowedJumpKeys; }
         set{
             bool AllCharsUnique(string s) {
@@ -370,7 +370,7 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
             }
         }
     }
-    
+
     private String jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
     [Category("General")]
     [DisplayName("Fetch 'First motion' jump label colors from")]
@@ -379,18 +379,18 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
                  "When equal to " + JumpLabelFirstMotionFormatDef.FMT_NAME + " one can configure classification style manually trough Tools->Options->PeasyMotion or\nTools->Options->Fonts And Colors->Text Editor->'PeasyMotion First Motion Jump label color'.")]
     [DefaultValue(JumpLabelFirstMotionFormatDef.FMT_NAME)] // by default we stick with peasy motion colors
     [TypeConverter(typeof(TextEditorClassificationStringConverter))]
-    public String JumplabelFirstMotionColorSource { 
-        get { return jumplabelFirstMotionColorSource; } 
-        set { 
+    public String JumplabelFirstMotionColorSource {
+        get { return jumplabelFirstMotionColorSource; }
+        set {
             if (TextEditorFontsAndColorsItemsList.ColorableItemsCached.Contains(value)) {
-                jumplabelFirstMotionColorSource = value; 
+                jumplabelFirstMotionColorSource = value;
             } else {
                 jumplabelFirstMotionColorSource = JumpLabelFirstMotionFormatDef.FMT_NAME;
                 Debug.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
             }
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionForegroundColor), value);
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFirstMotionBackgroundColor), value);
-        } 
+        }
     }
 
     private String jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
@@ -401,18 +401,18 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
                  "When equal to " + JumpLabelFinalMotionFormatDef.FMT_NAME + " one can configure classification style manually trough Tools->Options->PeasyMotion or\nTools->Options->Fonts And Colors->Text Editor->'PeasyMotion Final Motion Jump label color'.")]
     [DefaultValue(JumpLabelFinalMotionFormatDef.FMT_NAME)] // by default we stick with peasy motion colors
     [TypeConverter(typeof(TextEditorClassificationStringConverter))]
-    public String JumplabelFinalMotionColorSource { 
-        get { return jumplabelFinalMotionColorSource; } 
-        set { 
+    public String JumplabelFinalMotionColorSource {
+        get { return jumplabelFinalMotionColorSource; }
+        set {
             if (TextEditorFontsAndColorsItemsList.ColorableItemsCached.Contains(value)) {
-                jumplabelFinalMotionColorSource = value; 
+                jumplabelFinalMotionColorSource = value;
             } else {
                 jumplabelFinalMotionColorSource = JumpLabelFinalMotionFormatDef.FMT_NAME;
                 Trace.WriteLine($"Trying to set jump label color source to unexistant source value = {value}. Ignoring!");
             }
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionForegroundColor), value);
             VsSettings.NotifyInstancesPropertyColorSourceChanged(nameof(JumpLabelFinalMotionBackgroundColor), value);
-        } 
+        }
     }
 
     public static System.Windows.Media.Color fromDrawingColor(System.Drawing.Color c) {
@@ -422,26 +422,26 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
         return System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
     }
 
-    private System.Drawing.Color GetColor(ColorKey colorKey) { 
-#if DEBUG_COLOR_STYLE_OPTIONS 
+    private System.Drawing.Color GetColor(ColorKey colorKey) {
+#if DEBUG_COLOR_STYLE_OPTIONS
         Debug.WriteLine($"GeneralOptions.GetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={colorMap[colorKey].Color}");
 #endif
-        return colorMap[colorKey].Color; 
+        return colorMap[colorKey].Color;
     }
 
-    private void SetColor(bool sendNotification, string propertyName, ColorKey colorKey, System.Drawing.Color value) { 
-#if DEBUG_COLOR_STYLE_OPTIONS 
+    private void SetColor(bool sendNotification, string propertyName, ColorKey colorKey, System.Drawing.Color value) {
+#if DEBUG_COLOR_STYLE_OPTIONS
         Debug.WriteLine($"GeneralOptions.SetColor keyName={colorKey.Name}" + (colorKey.IsForeground? "FG":"BG") + $" color={value} Notify={sendNotification}");
 #endif
-        colorMap[colorKey].Color = value; 
+        colorMap[colorKey].Color = value;
         if (sendNotification) {
             VsSettings.NotiifyInstancesFmtPropertyChanged(propertyName, fromDrawingColor(value));
         }
     }
-        
+
     public void LoadColors(IServiceProvider Site)
     {
-#if DEBUG_COLOR_STYLE_OPTIONS 
+#if DEBUG_COLOR_STYLE_OPTIONS
         Debug.WriteLine($"GeneralOptions.LoadColors");
 #endif
         ThreadHelper.ThrowIfNotOnUIThread();
@@ -590,8 +590,8 @@ internal class GeneralOptions : BaseOptionModel<GeneralOptions>
 
 internal class DialogPageProvider
 {
-    public class General : BaseOptionPage<GeneralOptions> 
-    { 
+    public class General : BaseOptionPage<GeneralOptions>
+    {
         protected override void OnActivate(CancelEventArgs e)
         {
             Debug.WriteLine($"GeneralOptions OnActivate");
