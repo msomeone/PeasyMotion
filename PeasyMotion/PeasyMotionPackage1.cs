@@ -36,6 +36,7 @@ namespace PeasyMotion
         public const int PeasyMotionJumpToDocumentTab = 0x0104;
         public const int PeasyMotionJumpToLineBegining = 0x0105;
         public const int PeasyMotionTwoCharJump = 0x0106;
+        public const int PeasyMotionOneCharJump = 0x0107;
         public const int bmpHighlightText = 0x0001;
     }
 }

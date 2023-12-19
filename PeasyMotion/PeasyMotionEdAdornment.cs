@@ -68,7 +68,8 @@ namespace PeasyMotion
         LineJumpToWordEnding,
         VisibleDocuments,
         LineBeginingJump,
-        TwoCharJump
+        TwoCharJump,
+        OneCharJump
     }
 
     class PeasyMotionEdAdornmentCtorArgs
@@ -426,6 +427,11 @@ namespace PeasyMotion
                     {
                         candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]) && 
                                          (Char.ToLowerInvariant(nextCh) == twoCharSearchJumpKeys[1]) && (i < lastPosition);
+                    }
+                    break;
+                case JumpMode.OneCharJump:
+                    {
+                        candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]);
                     }
                     break;
                 default:

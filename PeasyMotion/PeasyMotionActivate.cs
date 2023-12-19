@@ -157,6 +157,11 @@ namespace PeasyMotion
                 PeasyMotion.PackageIds.PeasyMotionTwoCharJump);
             var twoCharJumphMenuItem = new MenuCommand(this.ExecuteTwoCharJump, twoCharJumpMenuCommandID);
             commandService.AddCommand(twoCharJumphMenuItem);
+
+            var oneCharJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet, 
+                PeasyMotion.PackageIds.PeasyMotionOneCharJump);
+            var oneCharJumphMenuItem = new MenuCommand(this.ExecuteOneCharJump, oneCharJumpMenuCommandID);
+            commandService.AddCommand(oneCharJumphMenuItem);
             
         }
 
@@ -320,6 +325,42 @@ namespace PeasyMotion
             #endif
 
             setStatusBarText("Two character jump activated. Waiting for two keys to execute search >");
+
+            ThreadHelper.ThrowIfNotOnUIThread();
+            CreateInputListenerUserQueryPhase(vsTextView, wpfTextView);
+            wpfTextView.LostAggregateFocus += OnTextViewFocusLost;
+        }
+        private void ExecuteOneCharJump(object o, EventArgs e)
+        {
+            ShowNotificationsIfAny();
+
+            activeJumpMode = JumpMode.OneCharJump;
+
+            textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
+            if (vsTextView == null) { Debug.Fail("MenuItemCallback: could not retrieve current view"); return; }
+
+            IWpfTextView wpfTextView = editor.GetWpfTextView(vsTextView);
+            if (wpfTextView == null) { Debug.Fail("failed to retrieve current view"); return; }
+
+            #if MEASUREEXECTIME
+            var watch2 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
+            TryDisableVsVim();
+            #if MEASUREEXECTIME
+            watch2.Stop();
+            Trace.WriteLine($"PeasyMotion ExecuteOneCharJump - TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
+            #endif
+
+            #if MEASUREEXECTIME
+            var watch7 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
+            TryDisableViEmu();
+            #if MEASUREEXECTIME
+            watch7.Stop();
+            Trace.WriteLine($"PeasyMotion ExecuteOneCharJump - TryDisableViEmu: {watch7.ElapsedMilliseconds} ms");
+            #endif
+
+            setStatusBarText("One character jump activated. Waiting for one key to execute search >");
 
             ThreadHelper.ThrowIfNotOnUIThread();
             CreateInputListenerUserQueryPhase(vsTextView, wpfTextView);
@@ -530,6 +571,18 @@ namespace PeasyMotion
                             StopListening2Keyboard(); // kill user key query accumulator / listener
                             ExecuteCommonJumpCode(); // start regular jumping code
                         }
+                    } 
+                    else if (activeJumpMode == JumpMode.OneCharJump)
+                    {
+                        if (userQueryAccumulatedKeyChars.Length == 1) {
+                            var wpfTextView = inputListenerUserQueryPhase.textView as IWpfTextView;
+                            if (null != wpfTextView) {
+                                wpfTextView.LostAggregateFocus -= OnTextViewFocusLost;
+                            }
+                            StopListening2Keyboard(); // kill user key query accumulator / listener
+                            ExecuteCommonJumpCode(); // start regular jumping code
+                        }
+
                     }
                 } else {
                     Deactivate();
@@ -579,6 +632,7 @@ namespace PeasyMotion
                             case JumpMode.LineJumpToWordBegining:
                             case JumpMode.LineJumpToWordEnding:
                             case JumpMode.LineBeginingJump:
+                            case JumpMode.OneCharJump:
                             case JumpMode.TwoCharJump:
                             { // move caret to label
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
