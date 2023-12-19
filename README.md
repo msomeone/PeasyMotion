@@ -24,6 +24,7 @@ commands available:
 * **Tools.InvokePeasyMotionJumpToDocumentTab**
 * **Tools.InvokePeasyMotionJumpToLineBegining**
 * **Tools.InvokePeasyMotionTwoCharJump**
+* **Tools.InvokePeasyMotionOneCharJump**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
@@ -69,6 +70,9 @@ nmap ;l gS:vsc Tools.InvokePeasyMotionJumpToLineBegining<CR>
 "Two char search mode:
 nmap ;c gS:vsc Tools.InvokePeasyMotionTwoCharJump<CR>
 
+"One char search mode:
+nmap ;c gS:vsc Tools.InvokePeasyMotionOneCharJump<CR>
+
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
 Invoking **Tools.InvokePeasyMotionTextSelect** command lets you to specify jump label to select in **[ current caret position -> jump label ]** range **(!)** in forward and reverse directions.
@@ -88,6 +92,9 @@ Jump to beginning of any visible line via Tools.InvokePeasyMotionJumpToLineBegin
 ## Two char search
 Execute two character search for visible text portion via Tools.InvokePeasyMotionTwoCharJump. Jump labels are placed at each match.
 When activated, two keys are queried, search and all matched are labeled. After that PM awaits for jump label keys to execute final motion and deactivate.
+
+## One char search
+Similar to two char search, except this commands only expects a single key to query.
 
 ## Bugreports, Feature requests and contributions
 PeasyMotion can be developed using Visual Studio 2017 or 2019. Contributions are welcomed.
