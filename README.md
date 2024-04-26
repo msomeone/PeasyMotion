@@ -1,4 +1,4 @@
-PeasyMotion (doc tab & code navigation)
+![image](https://github.com/msomeone/PeasyMotion/assets/783812/cb577c28-dde2-4998-9c3a-9312ccef1e21)PeasyMotion (doc tab & code navigation)
 ===
 [![Build status](https://ci.appveyor.com/api/projects/status/dm1x4gin96pp9oy2/branch/master?svg=true)](https://ci.appveyor.com/project/msomeone/peasymotion/branch/master)
 
@@ -11,8 +11,12 @@ This extension differs from other motion/jump extensions as it assigns jump labe
 Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
 
+## Installing
 Download this extension from the [VS Gallery](https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion)
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
+
+**IMPORTANT**
+![image](https://github.com/msomeone/PeasyMotion/assets/783812/8ee4c01d-616c-4f63-b5ad-ada809a30181)
 
 ## Key binding & options (for VsVim or ViEmu see 'Compatibility with other plugins' section)
 Assign key combination through **Tools**->**Options**->**Keyboard** 
