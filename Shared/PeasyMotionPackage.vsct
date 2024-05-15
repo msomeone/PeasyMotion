@@ -43,7 +43,7 @@
           <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenu"/>
       </Group>
     </Groups>
-      
+
     <Menus>
         <Menu guid="guidPeasyMotionPackageCmdSet" id="SubMenu" type="Menu" priority="0x0100">
         <Parent guid="guidPeasyMotionPackageCmdSet" id="TopMenuGroup"/>
@@ -98,7 +98,7 @@
         <Strings>
           <ButtonText>Invoke PeasyMotion Jump To Document Tab</ButtonText>
         </Strings>
-          
+
       </Button>
       <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToLineBegining" priority="0x0103" type="Button">
         <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
@@ -114,6 +114,13 @@
           <ButtonText>Invoke PeasyMotion Two Char Jump</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionOneCharJump" priority="0x0103" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion One Char Jump</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -123,10 +130,10 @@
             bitmap strip containing the bitmaps and then there are the numeric ids of the elements used
             inside a button definition. An important aspect of this declaration is that the element id
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
-      <Bitmap guid="guidImages" href="Resources\HighlightText.png" usedList="bmpHighlightText"/>
+      <Bitmap guid="guidImages" href=".\..\Resources\HighlightText.png" usedList="bmpHighlightText"/>
     </Bitmaps>
   </Commands>
-    
+
   <KeyBindings>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="Z"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionSelectTextActivateId" editor="guidVSStd97" mod1="CONTROL ALT" key1="X"/>
@@ -135,6 +142,7 @@
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToDocumentTab" editor="guidVSStd97" mod1="CONTROL ALT" key1="T"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToLineBegining" editor="guidVSStd97" mod1="CONTROL ALT" key1="J"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionTwoCharJump" editor="guidVSStd97" mod1="CONTROL ALT" key1="H"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionOneCharJump" editor="guidVSStd97" mod1="CONTROL ALT" key1="V"/>
   </KeyBindings>
 
   <Symbols>
@@ -146,7 +154,7 @@
       <IDSymbol name="TopMenuGroup" value="0x1020" />
       <IDSymbol name="SubMenu" value="0x1100" />
       <IDSymbol name="SubMenuGroup" value="0x1150" />
-    
+
       <IDSymbol name="PeasyMotionActivateId" value="0x0100" />
       <IDSymbol name="PeasyMotionSelectTextActivateId" value="0x0101" />
       <IDSymbol name="PeasyMotionLineJumpToWordBeginingId" value="0x0102" />
@@ -154,6 +162,7 @@
       <IDSymbol name="PeasyMotionJumpToDocumentTab" value="0x0104" />
       <IDSymbol name="PeasyMotionJumpToLineBegining" value="0x0105" />
       <IDSymbol name="PeasyMotionTwoCharJump" value="0x0106" />
+      <IDSymbol name="PeasyMotionOneCharJump" value="0x0107" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{3e6d0d87-f85a-45e7-bf87-a8f3a94c781b}" >

@@ -16,7 +16,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared", "Shared\Shared.shproj", "{FA3A3BC8-1780-40D0-AF0D-087D7D92D516}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeasyMotion2022", "PeasyMotion2022\PeasyMotion2022.csproj", "{DA591336-360E-41A0-B8A8-E212C12B8AAA}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared\Shared.projitems*{da591336-360e-41a0-b8a8-e212c12b8aaa}*SharedItemsImports = 4
+		Shared\Shared.projitems*{e14d8c11-bce9-4928-8df9-5edaf485f2e5}*SharedItemsImports = 4
+		Shared\Shared.projitems*{fa3a3bc8-1780-40d0-af0d-087d7d92d516}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -26,6 +35,10 @@ Global
 		{E14D8C11-BCE9-4928-8DF9-5EDAF485F2E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E14D8C11-BCE9-4928-8DF9-5EDAF485F2E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E14D8C11-BCE9-4928-8DF9-5EDAF485F2E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA591336-360E-41A0-B8A8-E212C12B8AAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA591336-360E-41A0-B8A8-E212C12B8AAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA591336-360E-41A0-B8A8-E212C12B8AAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA591336-360E-41A0-B8A8-E212C12B8AAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
