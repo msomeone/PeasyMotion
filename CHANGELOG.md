@@ -1,3 +1,9 @@
+### 1.8.1
+- One characted search mode has beed added. Invoke via Tools.InvokePeasyMotionOneCharJump
+- Jump to Word End cursor fix for non-vim mode
+- Caret stays in position after jumping with any text selected, text selection is cleared
+- move 2022 & 2019 build to master
+
 ### 1.6.1
 - Two characted search mode has beed added. Invoke via Tools.InvokePeasyMotionTwoCharJump
 - Jump to line begining fix - non-empty lines have jump label on first 'visible' character

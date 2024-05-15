@@ -28,6 +28,7 @@ commands available:
 * **Tools.InvokePeasyMotionJumpToDocumentTab**
 * **Tools.InvokePeasyMotionJumpToLineBegining**
 * **Tools.InvokePeasyMotionTwoCharJump**
+* **Tools.InvokePeasyMotionOneCharJump**
 
 Two jump label assignment algorithms are available (**Tools**->**Options**->**PeasyMotion options**):
 * Caret relative - place labels based on proximity to caret (closer to caret -> shorter the label).
@@ -72,6 +73,9 @@ nmap ;l gS:vsc Tools.InvokePeasyMotionJumpToLineBegining<CR>
 
 "Two char search mode:
 nmap ;c gS:vsc Tools.InvokePeasyMotionTwoCharJump<CR>
+
+"One char search mode:
+nmap ;v gS:vsc Tools.InvokePeasyMotionOneCharJump<CR>
 
 ```
 ## Text selection via Tools.InvokePeasyMotionTextSelect command
