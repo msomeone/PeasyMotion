@@ -13,6 +13,9 @@ Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymoti
 
 ## Installing
 Download this extension from the [VS Gallery](https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion)
+[VS 2019] https://www.vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902
+[VS 2022] https://www.vsixgallery.com/extension/PeasyMotion.14f4a247-6617-4f0c-aac4-76844ffe053c
+
 or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
 
 **IMPORTANT**
