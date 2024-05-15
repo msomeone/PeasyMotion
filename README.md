@@ -18,7 +18,7 @@ Recommended way - download this extension from the VSIX Gallery:
 
 [VS 2019] https://www.vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902
 
-[VS 2022] https://www.vsixgallery.com/extension/PeasyMotion.14f4a247-6617-4f0c-aac4-76844ffe053c
+[VS 2022] https://www.vsixgallery.com/extension/PeasyMotion.1b090bc3-3dca-4406-8675-6aa4de85fd9e
 
 or get the [CI build](https://ci.appveyor.com/project/msomeone/peasymotion).
 
