@@ -12,7 +12,9 @@ Such a behaviour may lead to faster motion and navigation in certain scenarios.
 Inspired by original [vim-easymotion](https://github.com/easymotion/vim-easymotion) script for VIM.
 
 ## Installing
-Download this extension from the VS Gallery:
+**WARNING** **For some reason marketplace keeps serving version 1.7.88 of the extension. Please disable extension auto-update and install using links below. If someone knows how to fix or workaround this, let me know please!**
+
+Recommended way - download this extension from the VSIX Gallery:
 
 [VS 2019] https://www.vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902
 
