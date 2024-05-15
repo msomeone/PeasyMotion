@@ -20,7 +20,7 @@ Recommended way - download this extension from the VSIX Gallery:
 
 [VS 2022] https://www.vsixgallery.com/extension/PeasyMotion.14f4a247-6617-4f0c-aac4-76844ffe053c
 
-or get the [CI build](http://vsixgallery.com/extension/PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902/).
+or get the [CI build](https://ci.appveyor.com/project/msomeone/peasymotion).
 
 **IMPORTANT**
 ![image](https://github.com/msomeone/PeasyMotion/assets/783812/8ee4c01d-616c-4f63-b5ad-ada809a30181)
