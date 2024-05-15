@@ -81,8 +81,19 @@ namespace PeasyMotion
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
             return infoBarModel;
         }*/
+        /*
         public override InfoBarModel getInfoBarModel() {
             InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: 2022 - Visual Studio 2022 support is here! Link is in 'more info' section");
+            InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
+            InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
+                "https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion2022");
+            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
+            InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
+            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+            return infoBarModel;
+        }*/
+        public override InfoBarModel getInfoBarModel() {
+            InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: One Char jump mode is here! And few fixes for open issues.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion2022");
