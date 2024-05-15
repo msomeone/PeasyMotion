@@ -158,6 +158,10 @@ namespace PeasyMotion
             var twoCharJumphMenuItem = new MenuCommand(this.ExecuteTwoCharJump, twoCharJumpMenuCommandID);
             commandService.AddCommand(twoCharJumphMenuItem);
 
+            var oneCharJumpMenuCommandID = new CommandID(PeasyMotion.PackageGuids.guidPeasyMotionPackageCmdSet,
+                PeasyMotion.PackageIds.PeasyMotionOneCharJump);
+            var oneCharJumphMenuItem = new MenuCommand(this.ExecuteOneCharJump, oneCharJumpMenuCommandID);
+            commandService.AddCommand(oneCharJumphMenuItem);
         }
 
         /// <summary>
@@ -326,6 +330,43 @@ namespace PeasyMotion
             wpfTextView.LostAggregateFocus += OnTextViewFocusLost;
         }
 
+        private void ExecuteOneCharJump(object o, EventArgs e)
+        {
+            ShowNotificationsIfAny();
+
+            activeJumpMode = JumpMode.OneCharJump;
+
+            textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
+            if (vsTextView == null) { Debug.Fail("MenuItemCallback: could not retrieve current view"); return; }
+
+            IWpfTextView wpfTextView = editor.GetWpfTextView(vsTextView);
+            if (wpfTextView == null) { Debug.Fail("failed to retrieve current view"); return; }
+
+            #if MEASUREEXECTIME
+            var watch2 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
+            TryDisableVsVim();
+            #if MEASUREEXECTIME
+            watch2.Stop();
+            Trace.WriteLine($"PeasyMotion ExecuteOneCharJump - TryDisableVsVim: {watch2.ElapsedMilliseconds} ms");
+            #endif
+
+            #if MEASUREEXECTIME
+            var watch7 = System.Diagnostics.Stopwatch.StartNew();
+            #endif
+            TryDisableViEmu();
+            #if MEASUREEXECTIME
+            watch7.Stop();
+            Trace.WriteLine($"PeasyMotion ExecuteOneCharJump - TryDisableViEmu: {watch7.ElapsedMilliseconds} ms");
+            #endif
+
+            setStatusBarText("One character jump activated. Waiting for one key to execute search >");
+
+            ThreadHelper.ThrowIfNotOnUIThread();
+            CreateInputListenerUserQueryPhase(vsTextView, wpfTextView);
+            wpfTextView.LostAggregateFocus += OnTextViewFocusLost;
+        }
+
         private void unfreezeStatusBar() {
             int frozen; statusBar.IsFrozen(out frozen);
             if (frozen != 0) {// Make sure the status bar is not frozen
@@ -425,7 +466,8 @@ namespace PeasyMotion
                 wpfView = wpfTextView,
                 textStructNav = textStructNav,
                 jumpMode = activeJumpMode,
-                twoCharSearchJumpKeys = this.userQueryAccumulatedKeyChars?.ToLowerInvariant()
+                nCharSearchJumpKeys = this.userQueryAccumulatedKeyChars?.ToLowerInvariant(),
+                vimOrBulkyCaretPresent = viEmuPluginPresent || enableVsVimCmdAvailable
             };
             adornmentMgr = new PeasyMotionEdAdornment(args);
 
@@ -496,12 +538,9 @@ namespace PeasyMotion
             userQueryAccumulatedKeyChars = null;
         }
 
-        // separate listener, used to accumulate keys for twochar jump mode
+        // separate listener, used to accumulate keys for one & two char jump modes
         private void InputListenerOnKeyPressedCharAccumulation(object sender, KeyPressEventArgs keyPressEventArgs)
         {
-            //TODO: if we decide to use this InputListenerOnKeyPressedCharAccumulation for other modes (not only for a TwoCharJump mode)
-            //      we must consider current mode inside this function! and current mode is not storead anywhere, except adornmentMgr
-
             ThreadHelper.ThrowIfNotOnUIThread();
             if (adornmentMgr != null) {
                 Trace.WriteLine("PeasyMotion: InputListenerOnKeyPressedCharAccumulation - adornmentMgr is not null!!! LOGIC ERROR!!!");
@@ -520,9 +559,19 @@ namespace PeasyMotion
                         userQueryAccumulatedKeyChars += keyPressEventArgs.KeyChar;
                     }
                     setStatusBarText($"Keys pressed: {userQueryAccumulatedKeyChars}");
-                    if (activeJumpMode == JumpMode.TwoCharJump)
+                    if ((activeJumpMode == JumpMode.TwoCharJump) || (activeJumpMode == JumpMode.OneCharJump))
                     {
-                        if (userQueryAccumulatedKeyChars.Length == 2) {
+                        var numCharsToWaitFor = 0;
+                        if (activeJumpMode == JumpMode.TwoCharJump)
+                        {
+                            numCharsToWaitFor = 2;
+                        }
+                        else if (activeJumpMode == JumpMode.OneCharJump)
+                        {
+                            numCharsToWaitFor = 1;
+                        }
+
+                        if (userQueryAccumulatedKeyChars.Length == numCharsToWaitFor) {
                             var wpfTextView = inputListenerUserQueryPhase.textView as IWpfTextView;
                             if (null != wpfTextView) {
                                 wpfTextView.LostAggregateFocus -= OnTextViewFocusLost;
@@ -581,6 +630,7 @@ namespace PeasyMotion
                             case JumpMode.LineBeginingJump:
                             case JumpMode.TwoCharJump:
                             { // move caret to label
+                                wpfTextView.Selection.Clear();
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
                             }
                             break;
@@ -650,7 +700,7 @@ namespace PeasyMotion
     }
 }
 
-//sanbox:
+//sandbox:
 #if false
             for (int i = 0; i < 256; i++) {
                 Debug.WriteLine("Char.IsSeparator(" + ((char)i) + " = " + Char.IsLowSurrogate((char)i));
@@ -667,7 +717,6 @@ namespace PeasyMotion
             }
 #endif
 
-//how to:
 //howtos:
 //var Site = PeasyMotionActivate.Instance.ServiceProvider;
 //var dte = Package.GetGlobalService(typeof(SDTE)) as EnvDTE80.DTE2;

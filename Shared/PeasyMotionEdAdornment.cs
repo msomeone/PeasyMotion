@@ -68,7 +68,8 @@ namespace PeasyMotion
         LineJumpToWordEnding,
         VisibleDocuments,
         LineBeginingJump,
-        TwoCharJump
+        TwoCharJump,
+        OneCharJump,
     }
 
     class PeasyMotionEdAdornmentCtorArgs
@@ -79,7 +80,8 @@ namespace PeasyMotion
         public IWpfTextView wpfView{ get; set; }
         public ITextStructureNavigator textStructNav{ get; set; }
         public JumpMode jumpMode{ get; set; }
-        public string twoCharSearchJumpKeys{ get; set; }
+        public string nCharSearchJumpKeys{ get; set; }
+        public bool vimOrBulkyCaretPresent{ get; set; }
     }
 
     /// <summary>
@@ -176,6 +178,8 @@ namespace PeasyMotion
         private JumpMode jumpMode = JumpMode.InvalidMode;
         public JumpMode CurrentJumpMode { get { return jumpMode; } }
 
+        private bool vimOrBulkyCaretPresent = true;
+
         public PeasyMotionEdAdornment() { // just for listener
         }
 
@@ -190,6 +194,8 @@ namespace PeasyMotion
             var watch0 = System.Diagnostics.Stopwatch.StartNew();
 #endif
             jumpMode = args.jumpMode;
+
+            vimOrBulkyCaretPresent = args.vimOrBulkyCaretPresent;
 
             var jumpLabelAssignmentAlgorithm = GeneralOptions.Instance.getJumpLabelAssignmentAlgorithm();
             var caretPositionSensivity = Math.Min(Int32.MaxValue >> 2, Math.Abs(GeneralOptions.Instance.caretPositionSensivity));
@@ -225,7 +231,7 @@ namespace PeasyMotion
             if (jumpMode == JumpMode.VisibleDocuments) {
                 SetupJumpToDocumentTabMode(jumpWords);
             } else {
-                SetupJumpInsideTextViewMode(jumpWords, jumpLabelAssignmentAlgorithm, caretPositionSensivity, args.twoCharSearchJumpKeys);
+                SetupJumpInsideTextViewMode(jumpWords, jumpLabelAssignmentAlgorithm, caretPositionSensivity, args.nCharSearchJumpKeys);
             }
 
             if (JumpLabelAssignmentAlgorithm.CaretRelative == jumpLabelAssignmentAlgorithm)
@@ -282,7 +288,7 @@ namespace PeasyMotion
                 List<JumpWord> jumpWords,
                 JumpLabelAssignmentAlgorithm jumpLabelAssignmentAlgorithm,
                 int caretPositionSensivity,
-                string twoCharSearchJumpKeys // null if jumpMode != TwoCharJump
+                string nCharSearchJumpKeys // null if jumpMode != TwoCharJump or OneCharJump
             )
         {
 #if MEASUREEXECTIME
@@ -318,7 +324,6 @@ namespace PeasyMotion
             }
 
             // collect words and required properties in visible text
-            //char prevChar = '\0';
             var startPoint = this.view.TextViewLines.FirstVisibleLine.Start;
             var endPoint = this.view.TextViewLines.LastVisibleLine.EndIncludingLineBreak;
             if (lineJumpToWordBeginOrEnd_isActive) {
@@ -388,7 +393,7 @@ namespace PeasyMotion
                                (!EOL_Windows && ((ch == LF) || (ch == CR    )))   ;
                 int jumpPosModifier = jumpPosModifierBase;
                 bool candidateLabel = false;
-                //TODO: anything faster and simpler ? will regex be faster? maybe symbols
+                //TODO: anything faster and simpler ? will regex be faster (ANSWER: NO 100%)? maybe symbols
                 // LUT with BITS (IsSep,IsPunct, etc as bits in INT record of LUT?)
                 switch (jumpMode) {
                 case JumpMode.LineJumpToWordBegining:
@@ -397,7 +402,16 @@ namespace PeasyMotion
                 case JumpMode.LineJumpToWordEnding:
                     {
                         bool nextIsLetterOrDigit = Char.IsLetterOrDigit(nextCh);
-                        candidateLabel = curIsLetterOrDigit && !nextIsLetterOrDigit;
+                        if (vimOrBulkyCaretPresent)
+                        {
+                            // for vim caret or 'bulky insert' caret:
+                            candidateLabel = curIsLetterOrDigit && !nextIsLetterOrDigit;
+                        }
+                        else
+                        {
+                            // for regular caret
+                            candidateLabel = prevIsLetterOrDigit && !curIsLetterOrDigit;
+                        }
                     }
                     break;
                 case JumpMode.LineBeginingJump:
@@ -424,8 +438,13 @@ namespace PeasyMotion
                     break;
                 case JumpMode.TwoCharJump:
                     {
-                        candidateLabel = (Char.ToLowerInvariant(ch) == twoCharSearchJumpKeys[0]) &&
-                                         (Char.ToLowerInvariant(nextCh) == twoCharSearchJumpKeys[1]) && (i < lastPosition);
+                        candidateLabel = (Char.ToLowerInvariant(ch) == nCharSearchJumpKeys[0]) &&
+                                         (Char.ToLowerInvariant(nextCh) == nCharSearchJumpKeys[1]) && (i < lastPosition);
+                    }
+                    break;
+                case JumpMode.OneCharJump:
+                    {
+                        candidateLabel = (Char.ToLowerInvariant(ch) == nCharSearchJumpKeys[0]) && (i < lastPosition);
                     }
                     break;
                 default:

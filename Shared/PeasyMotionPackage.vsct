@@ -114,6 +114,13 @@
           <ButtonText>Invoke PeasyMotion Two Char Jump</ButtonText>
         </Strings>
       </Button>
+      <Button guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionOneCharJump" priority="0x0103" type="Button">
+        <Parent guid="guidPeasyMotionPackageCmdSet" id="SubMenuGroup" />
+        <Icon guid="guidImages" id="bmpHighlightText" />
+        <Strings>
+          <ButtonText>Invoke PeasyMotion One Char Jump</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -135,6 +142,7 @@
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToDocumentTab" editor="guidVSStd97" mod1="CONTROL ALT" key1="T"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionJumpToLineBegining" editor="guidVSStd97" mod1="CONTROL ALT" key1="J"/>
     <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionTwoCharJump" editor="guidVSStd97" mod1="CONTROL ALT" key1="H"/>
+    <KeyBinding guid="guidPeasyMotionPackageCmdSet" id="PeasyMotionOneCharJump" editor="guidVSStd97" mod1="CONTROL ALT" key1="V"/>
   </KeyBindings>
 
   <Symbols>
@@ -154,6 +162,7 @@
       <IDSymbol name="PeasyMotionJumpToDocumentTab" value="0x0104" />
       <IDSymbol name="PeasyMotionJumpToLineBegining" value="0x0105" />
       <IDSymbol name="PeasyMotionTwoCharJump" value="0x0106" />
+      <IDSymbol name="PeasyMotionOneCharJump" value="0x0107" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{3e6d0d87-f85a-45e7-bf87-a8f3a94c781b}" >
