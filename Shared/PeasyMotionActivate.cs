@@ -629,6 +629,7 @@ namespace PeasyMotion
                             case JumpMode.LineJumpToWordEnding:
                             case JumpMode.LineBeginingJump:
                             case JumpMode.TwoCharJump:
+                            case JumpMode.OneCharJump:
                             { // move caret to label
                                 wpfTextView.Selection.Clear();
                                 wpfTextView.Caret.MoveTo(labelSnapshotSpan.Start);
