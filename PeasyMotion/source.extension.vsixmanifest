@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902" Version="1.12" Language="en-US" Publisher="Maksim Vorobiev" />
+        <Identity Id="PeasyMotion.a87d2837-6b54-4518-b014-3b29b4dcd902" Version="1.13" Language="en-US" Publisher="Maksim Vorobiev" />
         <DisplayName>PeasyMotion 2019</DisplayName>
         <Description xml:space="preserve">Implements several vim-easymotion motions (word,line,two-char search), fast tab / document switching, fast text region selection.
 This extension differs from other motion/jump extensions as it assigns jump labels to all words in text viewport, without asking specific "jump" key.
