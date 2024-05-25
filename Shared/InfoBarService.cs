@@ -96,7 +96,7 @@ namespace PeasyMotion
             InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: One Char jump mode is here! And few fixes for open issues.");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
-                "https://marketplace.visualstudio.com/items?itemName=maksim-vorobiev.PeasyMotion2022");
+                "https://github.com/msomeone/PeasyMotion");
             InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
             InfoBarActionItem[] actions = new InfoBarActionItem[] { moreInfo, dismiss };
             InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
