@@ -296,7 +296,7 @@ namespace PeasyMotion
         private void ExecuteTwoCharJump(object o, EventArgs e)
         {
             ShowNotificationsIfAny();
-
+            DeactivateIfActive();
             activeJumpMode = JumpMode.TwoCharJump;
 
             textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
@@ -333,7 +333,7 @@ namespace PeasyMotion
         private void ExecuteOneCharJump(object o, EventArgs e)
         {
             ShowNotificationsIfAny();
-
+            DeactivateIfActive();
             activeJumpMode = JumpMode.OneCharJump;
 
             textMgr.GetActiveView(1, null, out IVsTextView vsTextView);
@@ -432,6 +432,7 @@ namespace PeasyMotion
             #if MEASUREEXECTIME
             var watch3 = System.Diagnostics.Stopwatch.StartNew();
             #endif
+
             if (adornmentMgr != null) {
                 Deactivate();
             }
@@ -485,10 +486,14 @@ namespace PeasyMotion
             }
         }
 
-        private void OnTextViewFocusLost(object sender, EventArgs e) {
-            if ((adornmentMgr != null) || (inputListenerUserQueryPhase != null)) {
+        private void DeactivateIfActive() {
+             if ((adornmentMgr != null) || (inputListenerUserQueryPhase != null)) {
                 this.Deactivate();
-            }
+            }       
+        }
+
+        private void OnTextViewFocusLost(object sender, EventArgs e) {
+            DeactivateIfActive();
         }
 
         private void TryDisableVsVim()
