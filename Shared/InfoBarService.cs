@@ -93,7 +93,7 @@ namespace PeasyMotion
             return infoBarModel;
         }*/
         public override InfoBarModel getInfoBarModel() {
-            InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: One Char jump mode is here! And few fixes for open issues.");
+            InfoBarTextSpan text = new InfoBarTextSpan("PeasyMotion: ARM64 support");
             InfoBarHyperlink dismiss = new InfoBarHyperlink("Dismiss", "dismiss");
             InfoBarHyperlink moreInfo = new InfoBarHyperlink("More info",
                 "https://github.com/msomeone/PeasyMotion");
