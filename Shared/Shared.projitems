@@ -18,6 +18,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)HResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InfoBarService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InputListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JumpLabelAlgorithm.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JumpLabelClassifierProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JumpLabelUserControl.xaml.cs">
       <DependentUpon>$(MSBuildThisFileDirectory)JumpLabelUserControl.xaml</DependentUpon>
@@ -27,6 +28,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionEdAdornmentTextViewCreationListener.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PeasyMotionOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)VsMethodExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsPeasyMotionAdapter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)VsSettings.cs" />
   </ItemGroup>
   <ItemGroup>
